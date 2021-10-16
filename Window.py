@@ -22,7 +22,7 @@ class TiledWindow (arcade.View):
         player_image_file = pathlib.Path.cwd()/'assets'/'player'/'armed_rey.png'
         self.player = arcade.Sprite(player_image_file)
         self.player.center_x = 96 #special number
-        self.player.center_y = 224 #also special number
+        self.player.center_y = 224 #also special number/
         #Define player list:
         self.player_list = arcade.SpriteList()
         self.player_list.append(self.player)
