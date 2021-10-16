@@ -1,7 +1,7 @@
 import arcade
 import pathlib
 
-class TiledWindow (arcade.View):
+class TiledWindow(arcade.View):
     def __init__(self):
         super().__init__()
         self.window.set_mouse_visible(False)
@@ -12,6 +12,10 @@ class TiledWindow (arcade.View):
         self.player_list = None
         self.collision_engine = None
         self.move_speed = 3
+        self.health = 100
+        self.strength = 5
+        self.intelligence = 5
+        self.dexterity = 5
 
     def setup(self):
         #Load map
@@ -21,8 +25,8 @@ class TiledWindow (arcade.View):
         #Load the player:
         player_image_file = pathlib.Path.cwd()/'assets'/'player'/'armed_rey.png'
         self.player = arcade.Sprite(player_image_file)
-        self.player.center_x = 96 #special number
-        self.player.center_y = 224 #also special number/
+        self.player.center_x = 500 #special number
+        self.player.center_y = 500 #also special number/
         #Define player list:
         self.player_list = arcade.SpriteList()
         self.player_list.append(self.player)
@@ -35,29 +39,28 @@ class TiledWindow (arcade.View):
         self.mapscene.draw()
         #Draw every player in playerlist:
         self.player_list.draw()
+        arcade.draw_text(f"Health: {self.health}", 10, 920, arcade.color.WHITE, 14)
 
     def on_update(self, delta_time: float):
         # Run collision check
         self.collision_engine.update()
 
     def on_key_press(self, key: int, modifiers: int):
-        # Handle keyboard input:
-        if key == arcade.key.W:
+        if key == arcade.key.UP or key == arcade.key.W:
             self.player.change_y = self.move_speed
-        elif key == arcade.key.S:
+        elif key == arcade.key.DOWN or key == arcade.key.S:
             self.player.change_y = -self.move_speed
-        elif key == arcade.key.A:
+        elif key == arcade.key.LEFT or key == arcade.key.A:
             self.player.change_x = -self.move_speed
-        elif key == arcade.key.D:
+        elif key == arcade.key.RIGHT or key == arcade.key.D:
             self.player.change_x = self.move_speed
 
     def on_key_release(self, key: int, modifiers: int):
-        # Handle keyboard input:
-        if self.player.change_y > 0 and key == arcade.key.W:
+        if self.player.change_y > 0 and (key == arcade.key.UP or key == arcade.key.W):
             self.player.change_y = 0
-        elif self.player.change_y < 0 and key == arcade.key.S:
+        elif self.player.change_y < 0 and (key == arcade.key.DOWN or key == arcade.key.S):
             self.player.change_y = 0
-        elif self.player.change_x < 0 and key == arcade.key.A:
+        elif self.player.change_x < 0 and (key == arcade.key.LEFT or key == arcade.key.A):
             self.player.change_x = 0
-        elif self.player.change_x > 0 and key == arcade.key.D:
+        elif self.player.change_x > 0 and (key == arcade.key.RIGHT or key == arcade.key.D):
             self.player.change_x = 0
