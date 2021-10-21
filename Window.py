@@ -11,6 +11,7 @@ class TiledWindow(arcade.View):
         self.mapscene = None
         self.mapscene2 = None
         self.player = None
+        self.player_bullet = None
         self.wall_layer = None
         self.wall_layer2 = None
         self.wall_layer3 = None
@@ -42,15 +43,22 @@ class TiledWindow(arcade.View):
         #Load the player:
         player_image_file = pathlib.Path.cwd()/'assets'/'player'/'armed_rey.png'
         self.player = arcade.Sprite(player_image_file)
+        bullet_image_file = pathlib.Path.cwd()/'assets'/'raw'/'bullet.png'
+        self.player_bullet = arcade.Sprite(bullet_image_file)
         self.player.center_x = 300 #special number
         self.player.center_y = 500 #also special number/
+
         #Define player list:
         self.player_list = arcade.SpriteList()
+
         self.player_list.append(self.player)
+
+
         #Define collisions between player and a wall for all maps
         self.collision_engine = arcade.PhysicsEngineSimple(self.player, self.wall_layer)
         self.collision_engine2 = arcade.PhysicsEngineSimple(self.player, self.wall_layer2)
         self.collision_engine3 = arcade.PhysicsEngineSimple(self.player, self.wall_layer3)
+        self.bullet_collision = arcade.PhysicsEngineSimple(self.player_bullet, self.wall_layer3)
 
         #self.level1colls = arcade.check_for_collision_with_list(self.player, self.wall_layer)
         self.test = 1
@@ -85,8 +93,8 @@ class TiledWindow(arcade.View):
 
         if self.level1 == 1:
             self.level1colls = arcade.check_for_collision_with_list(self.player, self.wall_layer)
-            self.test = 1
             self.collision_engine.update()
+            self.bullet_collision.update()
             if len(self.level1colls) > 0:
                 self.lives -= 1
 
@@ -111,6 +119,11 @@ class TiledWindow(arcade.View):
             self.player.change_x = self.move_speed
         elif key == arcade.key.V:
             self.health -= 10
+        elif key == arcade.key.SPACE:
+            self.player_bullet.center_x = self.player.center_x
+            self.player_bullet.center_y = self.player.center_y
+            self.player_list.append(self.player_bullet)
+            self.player_bullet.change_x = self.move_speed
 
 
     def on_key_release(self, key: int, modifiers: int):
