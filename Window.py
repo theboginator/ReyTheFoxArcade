@@ -20,9 +20,7 @@ class TiledWindow(arcade.View):
         self.collision_engine3 = None
         self.move_speed = 3
         self.health = 100
-        self.strength = 5
-        self.intelligence = 5
-        self.dexterity = 5
+        self.lives = 3
         self.level1 = 1
         self.level2 = 0
         self.level3 = 0
@@ -44,7 +42,7 @@ class TiledWindow(arcade.View):
         #Load the player:
         player_image_file = pathlib.Path.cwd()/'assets'/'player'/'armed_rey.png'
         self.player = arcade.Sprite(player_image_file)
-        self.player.center_x = 500 #special number
+        self.player.center_x = 300 #special number
         self.player.center_y = 500 #also special number/
         #Define player list:
         self.player_list = arcade.SpriteList()
@@ -54,6 +52,9 @@ class TiledWindow(arcade.View):
         self.collision_engine2 = arcade.PhysicsEngineSimple(self.player, self.wall_layer2)
         self.collision_engine3 = arcade.PhysicsEngineSimple(self.player, self.wall_layer3)
 
+        #self.level1colls = arcade.check_for_collision_with_list(self.player, self.wall_layer)
+        self.test = 1
+
     def on_draw(self):
         arcade.start_render()
         #Draw map:
@@ -61,6 +62,7 @@ class TiledWindow(arcade.View):
         #Draw every player in playerlist:
         self.player_list.draw()
         arcade.draw_text(f"Health: {self.health}", 10, 920, arcade.color.WHITE, 14)
+        arcade.draw_text(f"Lives: {self.lives}", 200, 920, arcade.color.WHITE, 14)
         if self.health == 90:
             self.mapscene2.draw()
             self.level1 = 0
@@ -68,6 +70,7 @@ class TiledWindow(arcade.View):
             self.level3 = 0
             self.player_list.draw()
             arcade.draw_text(f"Health: {self.health}", 10, 920, arcade.color.WHITE, 14)
+            arcade.draw_text(f"Lives: {self.lives}", 200, 920, arcade.color.WHITE, 14)
         elif self.health == 80:
             self.mapscene3.draw()
             self.level1 = 0
@@ -75,15 +78,24 @@ class TiledWindow(arcade.View):
             self.level3 = 1
             self.player_list.draw()
             arcade.draw_text(f"Health: {self.health}", 10, 920, arcade.color.WHITE, 14)
+            arcade.draw_text(f"Lives: {self.lives}", 200, 920, arcade.color.WHITE, 14)
 
     def on_update(self, delta_time: float):
         # Run collision check
+
         if self.level1 == 1:
+            self.level1colls = arcade.check_for_collision_with_list(self.player, self.wall_layer)
+            self.test = 1
             self.collision_engine.update()
+            if len(self.level1colls) > 0:
+                self.lives -= 1
+
+
         elif self.level2 == 1:
             self.collision_engine2.update()
         elif self.level3 == 1:
             self.collision_engine3.update()
+
 
 
 
@@ -99,6 +111,7 @@ class TiledWindow(arcade.View):
             self.player.change_x = self.move_speed
         elif key == arcade.key.V:
             self.health -= 10
+
 
     def on_key_release(self, key: int, modifiers: int):
         if self.player.change_y > 0 and (key == arcade.key.UP or key == arcade.key.W):
