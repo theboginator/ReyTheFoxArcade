@@ -10,6 +10,7 @@ class TiledWindow(arcade.View):
         self.map_location3 = pathlib.Path.cwd()/'Assets'/'world'/'mapdata'/'perkins-cove_L3.json'
         self.mapscene = None
         self.mapscene2 = None
+        self.mapscene3 = None
         self.player = None
         self.player_bullet = None
         self.wall_layer = None
@@ -30,15 +31,15 @@ class TiledWindow(arcade.View):
         #Load maps
         sample_map = arcade.tilemap.load_tilemap(self.map_location)
         self.mapscene = arcade.Scene.from_tilemap(sample_map)
-        self.wall_layer = sample_map.sprite_lists['WallLayer']
+        self.wall_layer = sample_map.sprite_lists['WallLayer1']
 
         sample_map2 = arcade.tilemap.load_tilemap(self.map_location2)
         self.mapscene2 = arcade.Scene.from_tilemap(sample_map2)
-        self.wall_layer2 = sample_map2.sprite_lists['WallLayer']
+        self.wall_layer2 = sample_map2.sprite_lists['WallLayer2']
 
         sample_map3 = arcade.tilemap.load_tilemap(self.map_location3)
         self.mapscene3 = arcade.Scene.from_tilemap(sample_map3)
-        self.wall_layer3 = sample_map3.sprite_lists['WallLayer']
+        self.wall_layer3 = sample_map3.sprite_lists['WallLayer3']
 
         #Load the player:
         player_image_file = pathlib.Path.cwd()/'assets'/'player'/'armed_rey.png'
@@ -58,7 +59,9 @@ class TiledWindow(arcade.View):
         self.collision_engine = arcade.PhysicsEngineSimple(self.player, self.wall_layer)
         self.collision_engine2 = arcade.PhysicsEngineSimple(self.player, self.wall_layer2)
         self.collision_engine3 = arcade.PhysicsEngineSimple(self.player, self.wall_layer3)
-        self.bullet_collision = arcade.PhysicsEngineSimple(self.player_bullet, self.wall_layer3)
+        self.bullet_collision = arcade.PhysicsEngineSimple(self.player_bullet, self.wall_layer)
+        self.bullet_collision2 = arcade.PhysicsEngineSimple(self.player_bullet, self.wall_layer2)
+        self.bullet_collision3 = arcade.PhysicsEngineSimple(self.player_bullet, self.wall_layer3)
 
         #self.level1colls = arcade.check_for_collision_with_list(self.player, self.wall_layer)
         self.test = 1
@@ -101,8 +104,10 @@ class TiledWindow(arcade.View):
 
         elif self.level2 == 1:
             self.collision_engine2.update()
+            self.bullet_collision2.update()
         elif self.level3 == 1:
             self.collision_engine3.update()
+            self.bullet_collision3.update()
 
 
 
