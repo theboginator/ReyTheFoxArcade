@@ -72,24 +72,20 @@ class TiledWindow(arcade.View):
         self.mapscene.draw()
         #Draw every player in playerlist:
         self.player_list.draw()
-        arcade.draw_text(f"Health: {self.health}", 10, 920, arcade.color.WHITE, 14)
-        arcade.draw_text(f"Lives: {self.lives}", 200, 920, arcade.color.WHITE, 14)
         if self.health == 90:
             self.mapscene2.draw()
             self.level1 = 0
             self.level2 = 1
             self.level3 = 0
             self.player_list.draw()
-            arcade.draw_text(f"Health: {self.health}", 10, 920, arcade.color.WHITE, 14)
-            arcade.draw_text(f"Lives: {self.lives}", 200, 920, arcade.color.WHITE, 14)
         elif self.health == 80:
             self.mapscene3.draw()
             self.level1 = 0
             self.level2 = 0
             self.level3 = 1
             self.player_list.draw()
-            arcade.draw_text(f"Health: {self.health}", 10, 920, arcade.color.WHITE, 14)
-            arcade.draw_text(f"Lives: {self.lives}", 200, 920, arcade.color.WHITE, 14)
+        arcade.draw_text(f"Health: {self.health}", 10, 920, arcade.color.WHITE, 14)
+        arcade.draw_text(f"Lives: {self.lives}", 200, 920, arcade.color.WHITE, 14)
 
     def on_update(self, delta_time: float):
         # Run collision check
