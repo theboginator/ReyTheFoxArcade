@@ -7,7 +7,7 @@ FRAME_WIDTH = 512
 
 class AnimatedSpriteWindow(arcade.Window):
     def __init__ (self):
-        super().__init__(600, 600, "Demo Animated Sprite")
+        super().__init__()
         self.coin = None
         self.thing_list = None
 

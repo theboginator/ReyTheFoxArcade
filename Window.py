@@ -1,8 +1,12 @@
 import arcade
 import pathlib
+import AnimatedCoin
+from typing import get_type_hints, List
 
 TOTAL_LEVELS = 3
 
+FRAME_HEIGHT = 90
+FRAME_WIDTH = 90
 
 class TiledWindow(arcade.View):
     def __init__(self):
@@ -27,6 +31,7 @@ class TiledWindow(arcade.View):
         self.wall_list = []
         self.playerCollisionEngineArray = []
         self.bulletCollisionEngineArray = []
+        self.itemCollisionEngineArray = []
         self.move_speed = 3
         self.health = 100
         # TEST:
@@ -39,6 +44,21 @@ class TiledWindow(arcade.View):
         self.level3 = 0
 
     def setup(self):
+        coin_path = pathlib.Path.cwd() / 'assets' / 'Coin_Spin_Animation_A.png'
+        self.coin_sprite = \
+            arcade.AnimatedTimeBasedSprite(coin_path, 0.5, center_x=400, center_y=830)
+        coin_frames: List[arcade.AnimationKeyframe] = []
+        for row in range(4):
+            for col in range(4):
+                frame = \
+                    arcade.AnimationKeyframe(col * row, 100, arcade.load_texture(str(coin_path), x=col * FRAME_WIDTH,
+                                                                                 y=row * FRAME_HEIGHT,
+                                                                                 width=FRAME_WIDTH,
+                                                                                 height=FRAME_HEIGHT))
+                coin_frames.append(frame)
+            self.coin_sprite.frames = coin_frames
+            self.thing_list = arcade.SpriteList()
+            self.thing_list.append(self.coin_sprite)
         # Load maps and an array of enemies for each map
         sample_map = arcade.tilemap.load_tilemap(self.map_location)
         self.mapscene = arcade.Scene.from_tilemap(sample_map)
@@ -82,6 +102,7 @@ class TiledWindow(arcade.View):
             self.bulletCollisionEngineArray.append(arcade.PhysicsEngineSimple(self.player_bullet, self.wall_list[ctr]))
             ctr += 1
         self.collision_engine = arcade.PhysicsEngineSimple(self.player, self.wall_layer)
+        self.coincollision_engine = arcade.PhysicsEngineSimple(self.coin_sprite, self.wall_list[0])
         self.test = 1
 
     def on_draw(self):
@@ -89,14 +110,19 @@ class TiledWindow(arcade.View):
         # Draw map:
         self.map_list[self.activeLevel].draw()
         self.player_list.draw()
+        self.thing_list.draw()
         arcade.draw_text(f"Health: {self.health}", 10, 920, arcade.color.WHITE, 14)
         arcade.draw_text(f"Lives: {self.lives}", 200, 920, arcade.color.WHITE, 14)
 
     def on_update(self, delta_time: float):
         # Run collision check
+        self.coin_sprite.update_animation()
         self.newCollisions = arcade.check_for_collision_with_list(self.player, self.wall_list[self.activeLevel])
         self.playerCollisionEngineArray[self.activeLevel].update()
         self.bulletCollisionEngineArray[self.activeLevel].update()
+        self.coincollision_engine.update()
+        if len(self.newCollisions) > 0:
+            self.lives -= 1
 
     def on_key_press(self, key: int, modifiers: int):
         if key == arcade.key.UP or key == arcade.key.W:
