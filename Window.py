@@ -19,6 +19,7 @@ class TiledWindow(arcade.View):
         self.mapscene2 = None
         self.mapscene3 = None
         self.player = None
+        self.enemy = None
         self.player_bullet = None
         self.wall_layer = None
         self.wall_layer2 = None
@@ -84,14 +85,19 @@ class TiledWindow(arcade.View):
         # Load the player:
         player_image_file = pathlib.Path.cwd() / 'assets' / 'player' / 'armed_rey.png'
         self.player = arcade.Sprite(player_image_file)
+        enemy_image_file = pathlib.Path.cwd() / 'assets' / 'raw' / 'neckbeard.png'
+        self.enemy = arcade.Sprite(enemy_image_file)
         bullet_image_file = pathlib.Path.cwd() / 'assets' / 'raw' / 'bullet.png'
         self.player_bullet = arcade.Sprite(bullet_image_file)
         self.player.center_x = 300  # special number
         self.player.center_y = 500  # also special number/
+        self.enemy.center_x = 800
+        self.enemy.center_y = 500
 
         # Define player list:
         self.player_list = arcade.SpriteList()
         self.player_list.append(self.player)
+        self.player_list.append(self.enemy)
 
         # Define collisions between player and a wall for all maps
         ctr = 0
