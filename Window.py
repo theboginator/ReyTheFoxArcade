@@ -101,14 +101,13 @@ class TiledWindow(arcade.View):
         self.enemy.center_x = 800
         self.enemy.center_y = 500
 
-        # Define player list:
+        # Define player, enemy, and ordnance list:
         self.player_list = arcade.SpriteList()
         self.bullet_enemy_list = arcade.SpriteList()
+        self.player_bullet_list = arcade.SpriteList()
         self.enemy_list = arcade.SpriteList()
         self.player_list.append(self.player)
         #self.player_list.append(self.enemy)
-
-        # Define collisions between player and a wall for all maps
 
         x = 0
         y = 0
@@ -128,6 +127,7 @@ class TiledWindow(arcade.View):
             self.enemy_list.append(enemy)
             y += 1
 
+        # Define collisions between player and a wall for all maps
         ctr = 0
         while ctr < self.totalLevels:
             print('Setup level ', ctr)
@@ -149,6 +149,7 @@ class TiledWindow(arcade.View):
         # Draw map:
         self.map_list[self.activeLevel].draw()
         self.player_list.draw()
+        self.player_bullet_list.draw()
         self.thing_list.draw()
         #self.bullet_enemy_list.draw()
         #self.enemy_list.draw()
@@ -185,10 +186,12 @@ class TiledWindow(arcade.View):
         elif key == arcade.key.V:
             self.health -= 10
         elif key == arcade.key.SPACE:
+            bullet_image_file = pathlib.Path.cwd() / 'assets' / 'raw' / 'bullet.png'
+            self.player_bullet = arcade.Sprite(bullet_image_file)
             self.player_bullet.center_x = self.player.center_x
             self.player_bullet.center_y = self.player.center_y
-            self.player_list.append(self.player_bullet)
             self.player_bullet.change_x = self.move_speed
+            self.player_bullet_list.append(self.player_bullet)
 
     def on_key_release(self, key: int, modifiers: int):
         if self.player.change_y > 0 and (key == arcade.key.UP or key == arcade.key.W):
