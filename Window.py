@@ -1,6 +1,7 @@
 import arcade
 import pathlib
 import AnimatedCoin
+import random
 from typing import get_type_hints, List
 
 TOTAL_LEVELS = 3
@@ -30,14 +31,18 @@ class TiledWindow(arcade.View):
         self.collision_engine3 = None
         self.map_list = []
         self.wall_list = []
+        #self.enemy_list = []
+        #self.bullet_enemy_list = []
         self.playerCollisionEngineArray = []
         self.bulletCollisionEngineArray = []
         self.itemCollisionEngineArray = []
+        self.enemyCollisionEngineArray = []
         self.move_speed = 3
         self.health = 100
         # TEST:
         self.activeLevel = 1
         self.totalLevels = 3
+        self.totalenemies = 12
 
         self.lives = 3
         self.level1 = 1
@@ -60,6 +65,8 @@ class TiledWindow(arcade.View):
             self.coin_sprite.frames = coin_frames
             self.thing_list = arcade.SpriteList()
             self.thing_list.append(self.coin_sprite)
+
+
         # Load maps and an array of enemies for each map
         sample_map = arcade.tilemap.load_tilemap(self.map_location)
         self.mapscene = arcade.Scene.from_tilemap(sample_map)
@@ -96,10 +103,31 @@ class TiledWindow(arcade.View):
 
         # Define player list:
         self.player_list = arcade.SpriteList()
+        self.bullet_enemy_list = arcade.SpriteList()
+        self.enemy_list = arcade.SpriteList()
         self.player_list.append(self.player)
-        self.player_list.append(self.enemy)
+        #self.player_list.append(self.enemy)
 
         # Define collisions between player and a wall for all maps
+
+        x = 0
+        y = 0
+        while x < 6:
+            enemy_image_file = pathlib.Path.cwd() / 'assets' / 'raw' / 'neckbeard.png'
+            enemy = arcade.Sprite(enemy_image_file)
+            enemy.center_x = random.randint(100, 900)
+            enemy.center_y = random.randint(100, 900)
+            self.bullet_enemy_list.append(enemy)
+            x += 1
+
+        while y < 6:
+            enemy_image_file = pathlib.Path.cwd() / 'assets' / 'raw' / 'blue_goon.png'
+            enemy = arcade.Sprite(enemy_image_file)
+            enemy.center_x = random.randint(100, 900)
+            enemy.center_y = random.randint(100, 900)
+            self.enemy_list.append(enemy)
+            y += 1
+
         ctr = 0
         while ctr < self.totalLevels:
             print('Setup level ', ctr)
@@ -108,8 +136,13 @@ class TiledWindow(arcade.View):
             self.bulletCollisionEngineArray.append(arcade.PhysicsEngineSimple(self.player_bullet, self.wall_list[ctr]))
             ctr += 1
         self.collision_engine = arcade.PhysicsEngineSimple(self.player, self.wall_layer)
-        self.coincollision_engine = arcade.PhysicsEngineSimple(self.coin_sprite, self.wall_list[0])
+        self.coincollision_engine = arcade.PhysicsEngineSimple(self.coin_sprite, self.wall_layer)
         self.test = 1
+
+        ctr = 0
+        while ctr < len(self.enemy_list):
+            self.enemyCollisionEngineArray.append(arcade.PhysicsEngineSimple(self.enemy_list[ctr], self.wall_list[1]))
+            ctr += 1
 
     def on_draw(self):
         arcade.start_render()
@@ -117,6 +150,10 @@ class TiledWindow(arcade.View):
         self.map_list[self.activeLevel].draw()
         self.player_list.draw()
         self.thing_list.draw()
+        #self.bullet_enemy_list.draw()
+        #self.enemy_list.draw()
+        self.enemy_list.draw()
+
         arcade.draw_text(f"Health: {self.health}", 10, 920, arcade.color.WHITE, 14)
         arcade.draw_text(f"Lives: {self.lives}", 200, 920, arcade.color.WHITE, 14)
 
@@ -127,6 +164,12 @@ class TiledWindow(arcade.View):
         self.playerCollisionEngineArray[self.activeLevel].update()
         self.bulletCollisionEngineArray[self.activeLevel].update()
         self.coincollision_engine.update()
+        self.enemyCollisionEngineArray[0].update()
+        self.enemyCollisionEngineArray[1].update()
+        self.enemyCollisionEngineArray[2].update()
+        self.enemyCollisionEngineArray[3].update()
+        self.enemyCollisionEngineArray[4].update()
+        self.enemyCollisionEngineArray[5].update()
         if len(self.newCollisions) > 0:
             self.lives -= 1
 
