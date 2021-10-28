@@ -60,6 +60,7 @@ class TiledWindow(arcade.View):
         self.level1 = 1
         self.level2 = 0
         self.level3 = 0
+        self.fire = 0
 
     def setup(self):
         coin_path = pathlib.Path.cwd() / 'assets' / 'Coin_Spin_Animation_A.png'
@@ -118,6 +119,10 @@ class TiledWindow(arcade.View):
         self.player_list.append(self.player)
         # self.player_list.append(self.enemy)
 
+        # set up sound for bullet shot
+        shot_sound_path = pathlib.Path.cwd() / 'Assets' / "ShootSound.mp3"
+        self.shot_sound = arcade.load_sound(shot_sound_path)
+
         x = 0
         y = 0
         while x < 6:
@@ -146,7 +151,7 @@ class TiledWindow(arcade.View):
             ctr += 1
         self.collision_engine = arcade.PhysicsEngineSimple(self.player, self.wall_layer)
         self.coincollision_engine = arcade.PhysicsEngineSimple(self.coin_sprite, self.wall_layer)
-        self.test = 1
+
 
         ctr = 0
         while ctr < len(self.enemy_list):
@@ -173,11 +178,15 @@ class TiledWindow(arcade.View):
         self.newCollisions = arcade.check_for_collision_with_list(self.player, self.wall_list[self.activeLevel])
         self.playerCollisionEngineArray[self.activeLevel].update()
         self.player_bullet_list.update()
-        #self.bulletCollisionEngineArray[self.activeLevel].update()
+
         self.coincollision_engine.update()  # Change this to array as other engines are
         self.enemyCollisionEngineArray[self.activeLevel].update()
         if len(self.newCollisions) > 0:
             self.lives -= 1
+
+        if self.fire == 1:
+            arcade.play_sound(self.shot_sound)
+            self.fire = 0
 
     def on_key_press(self, key: int, modifiers: int):
         if key == arcade.key.UP or key == arcade.key.W:
@@ -201,6 +210,7 @@ class TiledWindow(arcade.View):
         elif self.player.change_x > 0 and (key == arcade.key.RIGHT or key == arcade.key.D):
             self.player.change_x = 0
 
+
     def on_mouse_press(self, x, y, button, modifiers):
         ##Load in a bullet, give it a firing angle, and push it into the list of active player ordnance
         bullet_image_file = pathlib.Path.cwd() / 'assets' / 'raw' / 'bullet.png'
@@ -218,3 +228,5 @@ class TiledWindow(arcade.View):
         new_bullet.change_x = math.cos(angle) * BULLET_SPEED
         new_bullet.change_y = math.sin(angle) * BULLET_SPEED
         self.player_bullet_list.append(new_bullet)
+        self.fire = 1 # indicator for sound to play
+        self.bulletCollisionEngineArray.append(arcade.PhysicsEngineSimple(new_bullet, self.wall_list[self.activeLevel]))
