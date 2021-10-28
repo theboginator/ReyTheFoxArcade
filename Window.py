@@ -1,3 +1,12 @@
+"""
+ReyTheFox Arcade
+
+Code written by Jacob Bogner and Abe Sabeh
+
+Some functionalities were implemented using examples provided at api.arcade.academy
+All artwork used in this project is original, (c) 2021, by Jack Brady
+"""
+import math
 import arcade
 import pathlib
 import AnimatedCoin
@@ -8,6 +17,9 @@ TOTAL_LEVELS = 3
 
 FRAME_HEIGHT = 90
 FRAME_WIDTH = 90
+
+BULLET_SPEED = 5
+
 
 class TiledWindow(arcade.View):
     def __init__(self):
@@ -31,8 +43,8 @@ class TiledWindow(arcade.View):
         self.collision_engine3 = None
         self.map_list = []
         self.wall_list = []
-        #self.enemy_list = []
-        #self.bullet_enemy_list = []
+        # self.enemy_list = []
+        # self.bullet_enemy_list = []
         self.playerCollisionEngineArray = []
         self.bulletCollisionEngineArray = []
         self.itemCollisionEngineArray = []
@@ -66,7 +78,6 @@ class TiledWindow(arcade.View):
             self.thing_list = arcade.SpriteList()
             self.thing_list.append(self.coin_sprite)
 
-
         # Load maps and an array of enemies for each map
         sample_map = arcade.tilemap.load_tilemap(self.map_location)
         self.mapscene = arcade.Scene.from_tilemap(sample_map)
@@ -94,8 +105,6 @@ class TiledWindow(arcade.View):
         self.player = arcade.Sprite(player_image_file)
         enemy_image_file = pathlib.Path.cwd() / 'assets' / 'raw' / 'neckbeard.png'
         self.enemy = arcade.Sprite(enemy_image_file)
-        bullet_image_file = pathlib.Path.cwd() / 'assets' / 'raw' / 'bullet.png'
-        self.player_bullet = arcade.Sprite(bullet_image_file)
         self.player.center_x = 300  # special number
         self.player.center_y = 500  # also special number/
         self.enemy.center_x = 800
@@ -107,7 +116,7 @@ class TiledWindow(arcade.View):
         self.player_bullet_list = arcade.SpriteList()
         self.enemy_list = arcade.SpriteList()
         self.player_list.append(self.player)
-        #self.player_list.append(self.enemy)
+        # self.player_list.append(self.enemy)
 
         x = 0
         y = 0
@@ -133,7 +142,7 @@ class TiledWindow(arcade.View):
             print('Setup level ', ctr)
             currentWallLayer = self.wall_list[ctr]
             self.playerCollisionEngineArray.append(arcade.PhysicsEngineSimple(self.player, currentWallLayer))
-            self.bulletCollisionEngineArray.append(arcade.PhysicsEngineSimple(self.player_bullet, self.wall_list[ctr]))
+            #self.bulletCollisionEngineArray.append(arcade.PhysicsEngineSimple(self.player_bullet_list, self.wall_list[ctr]))
             ctr += 1
         self.collision_engine = arcade.PhysicsEngineSimple(self.player, self.wall_layer)
         self.coincollision_engine = arcade.PhysicsEngineSimple(self.coin_sprite, self.wall_layer)
@@ -151,26 +160,22 @@ class TiledWindow(arcade.View):
         self.player_list.draw()
         self.player_bullet_list.draw()
         self.thing_list.draw()
-        #self.bullet_enemy_list.draw()
-        #self.enemy_list.draw()
+        # self.bullet_enemy_list.draw()
+        # self.enemy_list.draw()
         self.enemy_list.draw()
 
         arcade.draw_text(f"Health: {self.health}", 10, 920, arcade.color.WHITE, 14)
         arcade.draw_text(f"Lives: {self.lives}", 200, 920, arcade.color.WHITE, 14)
 
     def on_update(self, delta_time: float):
-        # Run collision check
+        # Run collision checks
         self.coin_sprite.update_animation()
         self.newCollisions = arcade.check_for_collision_with_list(self.player, self.wall_list[self.activeLevel])
         self.playerCollisionEngineArray[self.activeLevel].update()
-        self.bulletCollisionEngineArray[self.activeLevel].update()
-        self.coincollision_engine.update()
-        self.enemyCollisionEngineArray[0].update()
-        self.enemyCollisionEngineArray[1].update()
-        self.enemyCollisionEngineArray[2].update()
-        self.enemyCollisionEngineArray[3].update()
-        self.enemyCollisionEngineArray[4].update()
-        self.enemyCollisionEngineArray[5].update()
+        self.player_bullet_list.update()
+        #self.bulletCollisionEngineArray[self.activeLevel].update()
+        self.coincollision_engine.update()  # Change this to array as other engines are
+        self.enemyCollisionEngineArray[self.activeLevel].update()
         if len(self.newCollisions) > 0:
             self.lives -= 1
 
@@ -185,13 +190,6 @@ class TiledWindow(arcade.View):
             self.player.change_x = self.move_speed
         elif key == arcade.key.V:
             self.health -= 10
-        elif key == arcade.key.SPACE:
-            bullet_image_file = pathlib.Path.cwd() / 'assets' / 'raw' / 'bullet.png'
-            self.player_bullet = arcade.Sprite(bullet_image_file)
-            self.player_bullet.center_x = self.player.center_x
-            self.player_bullet.center_y = self.player.center_y
-            self.player_bullet.change_x = self.move_speed
-            self.player_bullet_list.append(self.player_bullet)
 
     def on_key_release(self, key: int, modifiers: int):
         if self.player.change_y > 0 and (key == arcade.key.UP or key == arcade.key.W):
@@ -202,3 +200,21 @@ class TiledWindow(arcade.View):
             self.player.change_x = 0
         elif self.player.change_x > 0 and (key == arcade.key.RIGHT or key == arcade.key.D):
             self.player.change_x = 0
+
+    def on_mouse_press(self, x, y, button, modifiers):
+        ##Load in a bullet, give it a firing angle, and push it into the list of active player ordnance
+        bullet_image_file = pathlib.Path.cwd() / 'assets' / 'raw' / 'bullet.png'
+        new_bullet = arcade.Sprite(bullet_image_file)
+        new_bullet.center_x = self.player.center_x
+        new_bullet.center_y = self.player.center_y
+
+        x_diff = x - self.player.center_x
+        y_diff = y - self.player.center_y
+
+        angle = math.atan2(y_diff, x_diff)
+        new_bullet.angle = math.degrees(angle)
+        print(f"Bullet angle: {new_bullet.angle:.2f}")
+
+        new_bullet.change_x = math.cos(angle) * BULLET_SPEED
+        new_bullet.change_y = math.sin(angle) * BULLET_SPEED
+        self.player_bullet_list.append(new_bullet)
