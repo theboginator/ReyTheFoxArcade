@@ -14,12 +14,11 @@ import random
 from typing import get_type_hints, List
 
 TOTAL_LEVELS = 3
-
+ENEMIES_PER_LEVEL = 3
 FRAME_HEIGHT = 90
 FRAME_WIDTH = 90
 
 BULLET_SPEED = 5
-
 
 class TiledWindow(arcade.View):
     def __init__(self):
@@ -43,7 +42,7 @@ class TiledWindow(arcade.View):
         self.collision_engine3 = None
         self.map_list = []
         self.wall_list = []
-        # self.enemy_list = []
+        self.enemy_list = []
         # self.bullet_enemy_list = []
         self.playerCollisionEngineArray = []
         self.bulletCollisionEngineArray = []
@@ -104,20 +103,16 @@ class TiledWindow(arcade.View):
         # Load the player:
         player_image_file = pathlib.Path.cwd() / 'assets' / 'player' / 'armed_rey.png'
         self.player = arcade.Sprite(player_image_file)
-        enemy_image_file = pathlib.Path.cwd() / 'assets' / 'raw' / 'neckbeard.png'
-        self.enemy = arcade.Sprite(enemy_image_file)
         self.player.center_x = 300  # special number
         self.player.center_y = 500  # also special number/
-        self.enemy.center_x = 800
-        self.enemy.center_y = 500
 
-        # Define player, enemy, and ordnance list:
+        # Define player, enemy, and ordnance lists:
         self.player_list = arcade.SpriteList()
         self.bullet_enemy_list = arcade.SpriteList()
         self.player_bullet_list = arcade.SpriteList()
-        self.enemy_list = arcade.SpriteList()
+
+        #Put player into player list:
         self.player_list.append(self.player)
-        # self.player_list.append(self.enemy)
 
         # set up sound for bullet shot
         shot_sound_path = pathlib.Path.cwd() / 'Assets' / "ShootSound.mp3"
@@ -126,20 +121,27 @@ class TiledWindow(arcade.View):
         x = 0
         y = 0
         while x < 6:
-            enemy_image_file = pathlib.Path.cwd() / 'assets' / 'raw' / 'neckbeard.png'
+            enemy_image_file = pathlib.Path.cwd() / 'assets' / 'enemy' / 'neckbeard.png'
             enemy = arcade.Sprite(enemy_image_file)
             enemy.center_x = random.randint(100, 900)
             enemy.center_y = random.randint(100, 900)
             self.bullet_enemy_list.append(enemy)
             x += 1
 
-        while y < 6:
-            enemy_image_file = pathlib.Path.cwd() / 'assets' / 'raw' / 'blue_goon.png'
-            enemy = arcade.Sprite(enemy_image_file)
-            enemy.center_x = random.randint(100, 900)
-            enemy.center_y = random.randint(100, 900)
-            self.enemy_list.append(enemy)
-            y += 1
+        lvl = 0
+        while lvl < TOTAL_LEVELS:
+            self.tempEnemyList = arcade.SpriteList()
+            numen = 0
+            while numen < ENEMIES_PER_LEVEL * lvl:
+                enemy_image_file = pathlib.Path.cwd() / 'assets' / 'enemy' / 'blue_goon.png'
+                enemy = arcade.Sprite(enemy_image_file)
+                enemy.center_x = random.randint(100, 900)
+                enemy.center_y = random.randint(100, 900)
+                self.tempEnemyList.append(enemy)
+                numen += 1
+            self.enemy_list.append(self.tempEnemyList)
+            lvl += 1
+
 
         # Define collisions between player and a wall for all maps
         ctr = 0
@@ -152,11 +154,13 @@ class TiledWindow(arcade.View):
         self.collision_engine = arcade.PhysicsEngineSimple(self.player, self.wall_layer)
         self.coincollision_engine = arcade.PhysicsEngineSimple(self.coin_sprite, self.wall_layer)
 
-
-        ctr = 0
-        while ctr < len(self.enemy_list):
-            self.enemyCollisionEngineArray.append(arcade.PhysicsEngineSimple(self.enemy_list[ctr], self.wall_list[1]))
-            ctr += 1
+        lvl = 0
+        while lvl < TOTAL_LEVELS:
+            ctr = 0
+            while ctr < len(self.enemy_list):
+                self.enemyCollisionEngineArray.append(arcade.PhysicsEngineSimple(self.enemy_list[lvl][ctr], self.wall_list[ctr]))
+                ctr += 1
+            lvl += 1
 
     def on_draw(self):
         arcade.start_render()
@@ -167,7 +171,7 @@ class TiledWindow(arcade.View):
         self.thing_list.draw()
         # self.bullet_enemy_list.draw()
         # self.enemy_list.draw()
-        self.enemy_list.draw()
+        self.enemy_list[self.activeLevel].draw()
 
         arcade.draw_text(f"Health: {self.health}", 10, 920, arcade.color.WHITE, 14)
         arcade.draw_text(f"Lives: {self.lives}", 200, 920, arcade.color.WHITE, 14)
