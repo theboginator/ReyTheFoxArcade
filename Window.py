@@ -40,6 +40,7 @@ class TiledWindow(arcade.View):
         self.collision_engine = None
         self.collision_engine2 = None
         self.collision_engine3 = None
+        self.bulletCollisionEngine = None
         self.map_list = []
         self.wall_list = []
         self.enemy_list = []
@@ -51,7 +52,7 @@ class TiledWindow(arcade.View):
         self.move_speed = 3
         self.health = 100
         # TEST:
-        self.activeLevel = 1
+        self.activeLevel = 0
         self.totalLevels = 3
         self.totalenemies = 12
 
@@ -60,6 +61,7 @@ class TiledWindow(arcade.View):
         self.level2 = 0
         self.level3 = 0
         self.fire = 0
+        self.mouse = 1
 
     def setup(self):
         coin_path = pathlib.Path.cwd() / 'assets' / 'Coin_Spin_Animation_A.png'
@@ -189,10 +191,13 @@ class TiledWindow(arcade.View):
         self.enemyCollisionEngineArray[self.activeLevel].update()
         if len(self.newCollisions) > 0:
             self.lives -= 1
-
+        #
         if self.fire == 1:
             arcade.play_sound(self.shot_sound)
             self.fire = 0
+            #self.bulletCollisionEngine.update()
+
+
 
     def on_key_press(self, key: int, modifiers: int):
         if key == arcade.key.UP or key == arcade.key.W:
@@ -204,7 +209,8 @@ class TiledWindow(arcade.View):
         elif key == arcade.key.RIGHT or key == arcade.key.D:
             self.player.change_x = self.move_speed
         elif key == arcade.key.V:
-            self.health -= 10
+            self.activeLevel += 1
+
 
     def on_key_release(self, key: int, modifiers: int):
         if self.player.change_y > 0 and (key == arcade.key.UP or key == arcade.key.W):
@@ -233,6 +239,9 @@ class TiledWindow(arcade.View):
 
         new_bullet.change_x = math.cos(angle) * BULLET_SPEED
         new_bullet.change_y = math.sin(angle) * BULLET_SPEED
+
         self.player_bullet_list.append(new_bullet)
+        #self.bulletCollisionEngine = arcade.PhysicsEngineSimple(self.player_bullet_list[self.mouse], self.wall_list[1])
         self.fire = 1 # indicator for sound to play
-        self.bulletCollisionEngineArray.append(arcade.PhysicsEngineSimple(new_bullet, self.wall_list[self.activeLevel]))
+
+
