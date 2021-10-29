@@ -5,6 +5,7 @@ Code written by Jacob Bogner and Abe Sabeh
 
 Some functionalities were implemented using examples provided at api.arcade.academy
 All artwork used in this project is original, (c) 2021, by Jack Brady
+Sound provided by
 """
 import math
 import arcade
@@ -195,6 +196,9 @@ class TiledWindow(arcade.View):
         dead_bullets = [impact for impact in self.player_bullet_list
                       if arcade.check_for_collision_with_list(impact, self.enemy_list[self.activeLevel])]
 
+        coin_hits = [impact for impact in self.thing_list
+                     if arcade.check_for_collision_with_list(impact, self.player_bullet_list)]
+
         if collisions:
             self.score += len(collisions)*5
             eliminations = filter(lambda enemy: enemy in collisions, self.enemy_list[self.activeLevel])
@@ -207,6 +211,12 @@ class TiledWindow(arcade.View):
             eliminations = filter(lambda bullet: bullet in dead_bullets, self.player_bullet_list)
             for bullet in eliminations:
                 self.player_bullet_list.remove(bullet)
+
+        if coin_hits:
+            self.lives += len(coin_hits)
+            eliminations = filter(lambda coin: coin in coin_hits, self.thing_list)
+            for coin in eliminations:
+                self.thing_list.remove(coin)
 
         if len(self.wallCollisions) > 0 or len(self.enemyCollisions) > 0:
             self.lives -= 1
