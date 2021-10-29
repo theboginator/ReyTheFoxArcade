@@ -51,7 +51,7 @@ class TiledWindow(arcade.View):
         self.itemCollisionEngineArray = []
         self.enemyCollisionEngineArray = []
         self.move_speed = 3
-        self.health = 100
+        self.score = 0
         # TEST:
         self.activeLevel = 0
         self.totalLevels = 3
@@ -178,7 +178,7 @@ class TiledWindow(arcade.View):
         # self.enemy_list.draw()
         self.enemy_list[self.activeLevel].draw()
 
-        arcade.draw_text(f"Health: {self.health}", 10, 920, arcade.color.WHITE, 14)
+        arcade.draw_text(f"Score: {self.score}", 10, 920, arcade.color.WHITE, 14)
         arcade.draw_text(f"Lives: {self.lives}", 200, 920, arcade.color.WHITE, 14)
 
     def on_update(self, delta_time: float):
@@ -196,7 +196,7 @@ class TiledWindow(arcade.View):
                       if arcade.check_for_collision_with_list(impact, self.enemy_list[self.activeLevel])]
 
         if collisions:
-            #self.score += len(collisions)
+            self.score += len(collisions)*5
             eliminations = filter(lambda enemy: enemy in collisions, self.enemy_list[self.activeLevel])
             for enemy in eliminations:
                 self.enemy_list[self.activeLevel].remove(enemy)
