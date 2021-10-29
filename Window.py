@@ -14,6 +14,8 @@ import AnimatedCoin
 import random
 from typing import get_type_hints, List
 
+from Endgame import GameOverView
+
 TOTAL_LEVELS = 3
 ENEMIES_PER_LEVEL = 3
 FRAME_HEIGHT = 90
@@ -234,11 +236,17 @@ class TiledWindow(arcade.View):
             arcade.play_sound(self.shot_sound)
             self.fire = 0
             # self.bulletCollisionEngine.update()
-        if len(self.enemy_list[self.activeLevel]) == 0:
-            self.activeLevel += 1
 
         self.playerCollisionEngineArray[self.activeLevel].update()
         self.player_bullet_list.update()
+
+        if len(self.enemy_list[self.activeLevel]) == 0:
+            self.activeLevel += 1
+            print('level ', self.activeLevel)
+        if self.activeLevel >= TOTAL_LEVELS:
+            print('you win')
+            view = GameOverView()
+            self.window.show_view(view)
 
     def on_key_press(self, key: int, modifiers: int):
         if key == arcade.key.UP or key == arcade.key.W:
@@ -249,7 +257,7 @@ class TiledWindow(arcade.View):
             self.player.change_x = -self.move_speed
         elif key == arcade.key.RIGHT or key == arcade.key.D:
             self.player.change_x = self.move_speed
-        elif key == arcade.key.V:
+        elif key == arcade.key.V and self.activeLevel + 1 < TOTAL_LEVELS:
             self.activeLevel += 1
 
     def on_key_release(self, key: int, modifiers: int):
