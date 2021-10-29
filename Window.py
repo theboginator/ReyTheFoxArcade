@@ -5,7 +5,8 @@ Code written by Jacob Bogner and Abe Sabeh
 
 Some functionalities were implemented using examples provided at api.arcade.academy
 All artwork used in this project is original, (c) 2021, by Jack Brady
-Sound provided by
+Sound provided by https://www.fesliyanstudios.com/royalty-free-sound-effects-download/gun-shooting-300
+
 """
 import math
 import arcade
@@ -121,7 +122,7 @@ class TiledWindow(arcade.View):
         self.player_list.append(self.player)
 
         # set up sound for bullet shot
-        shot_sound_path = pathlib.Path.cwd() / 'Assets' / "ShootSound.mp3"
+        shot_sound_path = pathlib.Path.cwd() / 'Assets' / "gunshot.mp3"
         self.shot_sound = arcade.load_sound(shot_sound_path)
 
         x = 0
