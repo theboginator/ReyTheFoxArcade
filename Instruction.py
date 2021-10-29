@@ -12,7 +12,7 @@ class BeginGameView(arcade.View):
     def __init__(self):
         """ This is run once when we switch to this view """
         super().__init__()
-        launch_screen_img = pathlib.Path.cwd()/'assets'/'world'/'launch_screen.png'
+        launch_screen_img = pathlib.Path.cwd()/'assets'/'world'/'launch_screen_detailed.png'
         self.texture = arcade.load_texture(launch_screen_img)
         print("Loading launch screen.")
     def on_draw(self):
