@@ -128,11 +128,12 @@ class TiledWindow(arcade.View):
             self.bullet_enemy_list.append(enemy)
             x += 1
 
-        lvl = 0
-        while lvl < TOTAL_LEVELS:
+        lvl = 1
+        while lvl <= TOTAL_LEVELS:
             self.tempEnemyList = arcade.SpriteList()
             numen = 0
             while numen < ENEMIES_PER_LEVEL * lvl:
+                print('put enemy in ', lvl, ' ', numen)
                 enemy_image_file = pathlib.Path.cwd() / 'assets' / 'enemy' / 'blue_goon.png'
                 enemy = arcade.Sprite(enemy_image_file)
                 enemy.center_x = random.randint(100, 900)
@@ -158,6 +159,7 @@ class TiledWindow(arcade.View):
         while lvl < TOTAL_LEVELS:
             ctr = 0
             while ctr < len(self.enemy_list):
+                print('pass ', lvl, ' ', ctr)
                 self.enemyCollisionEngineArray.append(arcade.PhysicsEngineSimple(self.enemy_list[lvl][ctr], self.wall_list[ctr]))
                 ctr += 1
             lvl += 1
@@ -171,7 +173,7 @@ class TiledWindow(arcade.View):
         self.thing_list.draw()
         # self.bullet_enemy_list.draw()
         # self.enemy_list.draw()
-        self.enemy_list[self.activeLevel].draw()
+        self.enemy_list[self.activeLevel-1].draw()
 
         arcade.draw_text(f"Health: {self.health}", 10, 920, arcade.color.WHITE, 14)
         arcade.draw_text(f"Lives: {self.lives}", 200, 920, arcade.color.WHITE, 14)
