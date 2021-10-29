@@ -199,8 +199,8 @@ class TiledWindow(arcade.View):
         coin_hits = [impact for impact in self.thing_list
                      if arcade.check_for_collision_with_list(impact, self.player_bullet_list)]
 
-        wall_bullets = [impact for impact in self.player_bullet_list
-                      if arcade.check_for_collision_with_list(impact, self.wall_list[self.activeLevel])]
+        #wall_bullets = [impact for impact in self.player_bullet_list
+                      #if arcade.check_for_collision_with_list(impact, self.wall_list[self.activeLevel])]
 
         if collisions:
             self.score += len(collisions)*5
@@ -215,11 +215,11 @@ class TiledWindow(arcade.View):
             for bullet in eliminations:
                 self.player_bullet_list.remove(bullet)
 
-        if wall_bullets:
-            # self.score += len(collisions)
-            eliminations = filter(lambda bullet: bullet in wall_bullets, self.player_bullet_list)
-            for bullet in eliminations:
-                self.player_bullet_list.remove(bullet)
+        # if wall_bullets:
+        #     # self.score += len(collisions)
+        #     eliminations = filter(lambda bullet: bullet in wall_bullets, self.player_bullet_list)
+        #     for bullet in eliminations:
+        #         self.player_bullet_list.remove(bullet)
 
         if coin_hits:
             self.lives += len(coin_hits)
