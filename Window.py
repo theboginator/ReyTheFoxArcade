@@ -20,6 +20,7 @@ FRAME_WIDTH = 90
 
 BULLET_SPEED = 5
 
+
 class TiledWindow(arcade.View):
     def __init__(self):
         super().__init__()
@@ -113,7 +114,7 @@ class TiledWindow(arcade.View):
         self.bullet_enemy_list = arcade.SpriteList()
         self.player_bullet_list = arcade.SpriteList()
 
-        #Put player into player list:
+        # Put player into player list:
         self.player_list.append(self.player)
 
         # set up sound for bullet shot
@@ -145,14 +146,13 @@ class TiledWindow(arcade.View):
             self.enemy_list.append(self.tempEnemyList)
             lvl += 1
 
-
-        # Define collisions between player and a wall for all maps
+        # Define collisions between player and a wall for all maps and enemies
         ctr = 0
         while ctr < self.totalLevels:
             print('Setup level ', ctr)
             currentWallLayer = self.wall_list[ctr]
             self.playerCollisionEngineArray.append(arcade.PhysicsEngineSimple(self.player, currentWallLayer))
-            #self.bulletCollisionEngineArray.append(arcade.PhysicsEngineSimple(self.player_bullet_list, self.wall_list[ctr]))
+            # self.bulletCollisionEngineArray.append(arcade.PhysicsEngineSimple(self.player_bullet_list, self.wall_list[ctr]))
             ctr += 1
         self.collision_engine = arcade.PhysicsEngineSimple(self.player, self.wall_layer)
         self.coincollision_engine = arcade.PhysicsEngineSimple(self.coin_sprite, self.wall_layer)
@@ -162,7 +162,8 @@ class TiledWindow(arcade.View):
             ctr = 0
             while ctr < len(self.enemy_list):
                 print('pass ', lvl, ' ', ctr)
-                self.enemyCollisionEngineArray.append(arcade.PhysicsEngineSimple(self.enemy_list[lvl][ctr], self.wall_list[ctr]))
+                self.enemyCollisionEngineArray.append(
+                    arcade.PhysicsEngineSimple(self.enemy_list[lvl][ctr], self.wall_list[ctr]))
                 ctr += 1
             lvl += 1
 
@@ -175,7 +176,7 @@ class TiledWindow(arcade.View):
         self.thing_list.draw()
         # self.bullet_enemy_list.draw()
         # self.enemy_list.draw()
-        self.enemy_list[self.activeLevel-1].draw()
+        self.enemy_list[self.activeLevel].draw()
 
         arcade.draw_text(f"Health: {self.health}", 10, 920, arcade.color.WHITE, 14)
         arcade.draw_text(f"Lives: {self.lives}", 200, 920, arcade.color.WHITE, 14)
@@ -183,21 +184,42 @@ class TiledWindow(arcade.View):
     def on_update(self, delta_time: float):
         # Run collision checks
         self.coin_sprite.update_animation()
-        self.newCollisions = arcade.check_for_collision_with_list(self.player, self.wall_list[self.activeLevel])
-        self.playerCollisionEngineArray[self.activeLevel].update()
-        self.player_bullet_list.update()
-
+        self.wallCollisions = arcade.check_for_collision_with_list(self.player, self.wall_list[self.activeLevel])
+        self.enemyCollisions = arcade.check_for_collision_with_list(self.player, self.enemy_list[self.activeLevel])
         self.coincollision_engine.update()  # Change this to array as other engines are
         self.enemyCollisionEngineArray[self.activeLevel].update()
-        if len(self.newCollisions) > 0:
+        #check if a bullet has collided with an enemy. If it has, increase the player's score and remove the enemy and bullet
+        collisions = [impact for impact in self.enemy_list[self.activeLevel]
+                      if arcade.check_for_collision_with_list(impact, self.player_bullet_list)]
+
+        dead_bullets = [impact for impact in self.player_bullet_list
+                      if arcade.check_for_collision_with_list(impact, self.enemy_list[self.activeLevel])]
+
+        if collisions:
+            #self.score += len(collisions)
+            eliminations = filter(lambda enemy: enemy in collisions, self.enemy_list[self.activeLevel])
+            for enemy in eliminations:
+                self.enemy_list[self.activeLevel].remove(enemy)
+                print('Enemies left on this level: ', len(self.enemy_list[self.activeLevel]))
+
+        if dead_bullets:
+            #self.score += len(collisions)
+            eliminations = filter(lambda bullet: bullet in dead_bullets, self.player_bullet_list)
+            for bullet in eliminations:
+                self.player_bullet_list.remove(bullet)
+
+        if len(self.wallCollisions) > 0 or len(self.enemyCollisions) > 0:
             self.lives -= 1
         #
         if self.fire == 1:
             arcade.play_sound(self.shot_sound)
             self.fire = 0
-            #self.bulletCollisionEngine.update()
+            # self.bulletCollisionEngine.update()
+        if len(self.enemy_list[self.activeLevel]) == 0:
+            self.activeLevel += 1
 
-
+        self.playerCollisionEngineArray[self.activeLevel].update()
+        self.player_bullet_list.update()
 
     def on_key_press(self, key: int, modifiers: int):
         if key == arcade.key.UP or key == arcade.key.W:
@@ -211,7 +233,6 @@ class TiledWindow(arcade.View):
         elif key == arcade.key.V:
             self.activeLevel += 1
 
-
     def on_key_release(self, key: int, modifiers: int):
         if self.player.change_y > 0 and (key == arcade.key.UP or key == arcade.key.W):
             self.player.change_y = 0
@@ -221,7 +242,6 @@ class TiledWindow(arcade.View):
             self.player.change_x = 0
         elif self.player.change_x > 0 and (key == arcade.key.RIGHT or key == arcade.key.D):
             self.player.change_x = 0
-
 
     def on_mouse_press(self, x, y, button, modifiers):
         ##Load in a bullet, give it a firing angle, and push it into the list of active player ordnance
@@ -241,7 +261,5 @@ class TiledWindow(arcade.View):
         new_bullet.change_y = math.sin(angle) * BULLET_SPEED
 
         self.player_bullet_list.append(new_bullet)
-        #self.bulletCollisionEngine = arcade.PhysicsEngineSimple(self.player_bullet_list[self.mouse], self.wall_list[1])
-        self.fire = 1 # indicator for sound to play
-
-
+        # self.bulletCollisionEngine = arcade.PhysicsEngineSimple(self.player_bullet_list[self.mouse], self.wall_list[1])
+        self.fire = 1  # indicator for sound to play
