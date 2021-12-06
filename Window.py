@@ -240,6 +240,20 @@ class TiledWindow(arcade.View):
 
         self.playerCollisionEngineArray[self.activeLevel].update()
         self.player_bullet_list.update()
+        for x in self.enemy_list[self.activeLevel]:
+            if x.center_x > self.player.center_x and x.center_y > self.player.center_y:
+                x.center_x = x.center_x - 0.5
+                x.center_y = x.center_y - 0.5
+            elif x.center_x > self.player.center_x and x.center_y < self.player.center_y:
+                x.center_x = x.center_x - 0.5
+                x.center_y = x.center_y + 0.5
+            elif x.center_x < self.player.center_x and x.center_y > self.player.center_y:
+                x.center_x = x.center_x + 0.5
+                x.center_y = x.center_y - 0.5
+            elif x.center_x < self.player.center_x and x.center_y < self.player.center_y:
+                x.center_x = x.center_x + 0.5
+                x.center_y = x.center_y + 0.5
+
 
     def on_key_press(self, key: int, modifiers: int):
         if key == arcade.key.UP or key == arcade.key.W:
