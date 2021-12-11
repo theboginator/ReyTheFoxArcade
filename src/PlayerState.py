@@ -19,7 +19,7 @@ WINDOW_HEIGHT = 1000
 class PlayerState:  #Contains data about the player
     x_loc: int
     y_loc: int
-    level: int      #Will allow us to tell what level the player is on
+    #level: int      #Will allow us to tell what level the player is on
     points: int
     last_update: datetime.datetime
 
