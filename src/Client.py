@@ -2,8 +2,10 @@ import asyncio
 import json
 import math
 import pathlib
+import random
 import socket
 import threading
+from typing import List
 
 import arcade
 import Instruction
@@ -39,7 +41,7 @@ class BeginGameView(arcade.View):
     def on_mouse_press(self, _x, _y, _button, _modifiers):
         """ If the user presses the mouse button, start the game. """
         print("Game starting")
-        game_view = Window.TiledWindow()
+        game_view = TiledWindow()
         game_view.setup()
         self.window.show_view(game_view)
 
@@ -68,6 +70,7 @@ class GameOverView(arcade.View):
 class TiledWindow(arcade.View):
     def __init__(self):
         super().__init__()
+        self.actions = None
         self.ip_addr = client_address
         self.server_add = server_address
         self.window.set_mouse_visible(True)
@@ -92,15 +95,23 @@ class TiledWindow(arcade.View):
         self.wall_list = []
         self.enemy_list = []
         # self.bullet_enemy_list = []
+
+        """Move the collision engine arrays to server-side; these checks will all be done via server"""
         self.playerCollisionEngineArray = []
         self.bulletCollisionEngineArray = []
         self.itemCollisionEngineArray = []
         self.enemyCollisionEngineArray = []
+
+        #Move speed also moves to server-side; all movement is handled via server
         self.move_speed = 3
+
+        #For now, client can keep track of score?
         self.score = 0
         # TEST:
         self.activeLevel = 0
         self.totalLevels = 3
+
+        #This is to be moved to server side and replaced with arrays for the enemies and other players
         self.totalenemies = 12
 
         self.lives = 3
@@ -111,23 +122,11 @@ class TiledWindow(arcade.View):
         self.mouse = 1
 
     def setup(self):
-        coin_path = pathlib.Path.cwd() / 'assets' / 'Coin_Spin_Animation_A.png'
-        self.coin_sprite = \
-            arcade.AnimatedTimeBasedSprite(coin_path, 0.5, center_x=400, center_y=830)
-        coin_frames: List[arcade.AnimationKeyframe] = []
-        for row in range(4):
-            for col in range(4):
-                frame = \
-                    arcade.AnimationKeyframe(col * row, 100, arcade.load_texture(str(coin_path), x=col * FRAME_WIDTH,
-                                                                                 y=row * FRAME_HEIGHT,
-                                                                                 width=FRAME_WIDTH,
-                                                                                 height=FRAME_HEIGHT))
-                coin_frames.append(frame)
-            self.coin_sprite.frames = coin_frames
-            self.thing_list = arcade.SpriteList()
-            self.thing_list.append(self.coin_sprite)
-
         # Load maps and an array of enemies for each map
+        """
+        Mapscenes will probably have to exist both on server and client
+        Wall layers will almost certainly only need to exist on server side
+        """
         sample_map = arcade.tilemap.load_tilemap(self.map_location)
         self.mapscene = arcade.Scene.from_tilemap(sample_map)
         self.wall_layer = sample_map.sprite_lists['WallLayer1']
@@ -152,11 +151,15 @@ class TiledWindow(arcade.View):
         # Load the player:
         player_image_file = pathlib.Path.cwd() / 'assets' / 'player' / 'armed_rey.png'
         self.player = arcade.Sprite(player_image_file)
+        """
+        Player will get a start X and Y from the server
+        """
         self.player.center_x = 300  # special number
         self.player.center_y = 500  # also special number/
 
         # Define player, enemy, and ordnance lists:
         self.player_list = arcade.SpriteList()
+        self.friendly_list = arcade.SpriteList() #Holds other connected players
         self.bullet_enemy_list = arcade.SpriteList()
         self.player_bullet_list = arcade.SpriteList()
 
@@ -166,6 +169,10 @@ class TiledWindow(arcade.View):
         # set up sound for bullet shot
         shot_sound_path = pathlib.Path.cwd() / 'Assets' / "gunshot.mp3"
         self.shot_sound = arcade.load_sound(shot_sound_path)
+
+        """
+        All this code placing enemies is to be moved to server side
+        """
 
         x = 0
         y = 0
@@ -192,6 +199,9 @@ class TiledWindow(arcade.View):
             self.enemy_list.append(self.tempEnemyList)
             lvl += 1
 
+        """
+        Code defining collision engines will be moved to server side as well
+        """
         # Define collisions between player and a wall for all maps and enemies
         ctr = 0
         while ctr < self.totalLevels:
@@ -229,10 +239,8 @@ class TiledWindow(arcade.View):
 
     def on_update(self, delta_time: float):
         # Run collision checks
-        self.coin_sprite.update_animation()
         self.wallCollisions = arcade.check_for_collision_with_list(self.player, self.wall_list[self.activeLevel])
         self.enemyCollisions = arcade.check_for_collision_with_list(self.player, self.enemy_list[self.activeLevel])
-        self.coincollision_engine.update()  # Change this to array as other engines are
         self.enemyCollisionEngineArray[self.activeLevel].update()
         #check if a bullet has collided with an enemy. If it has, increase the player's score and remove the enemy and bullet
         collisions = [impact for impact in self.enemy_list[self.activeLevel]
@@ -260,12 +268,6 @@ class TiledWindow(arcade.View):
             for bullet in eliminations:
                 self.player_bullet_list.remove(bullet)
 
-        # if wall_bullets:
-        #     # self.score += len(collisions)
-        #     eliminations = filter(lambda bullet: bullet in wall_bullets, self.player_bullet_list)
-        #     for bullet in eliminations:
-        #         self.player_bullet_list.remove(bullet)
-
         if coin_hits:
             self.lives += len(coin_hits)
             eliminations = filter(lambda coin: coin in coin_hits, self.thing_list)
@@ -278,8 +280,11 @@ class TiledWindow(arcade.View):
         if self.fire == 1:
             arcade.play_sound(self.shot_sound)
             self.fire = 0
-            # self.bulletCollisionEngine.update()
 
+
+        """
+        Moving enemies will happen on server side; add additional condition to loop: run for each player on the network at each level
+        """
         self.playerCollisionEngineArray[self.activeLevel].update()
         self.player_bullet_list.update()
         for x in self.enemy_list[self.activeLevel]:
@@ -297,6 +302,9 @@ class TiledWindow(arcade.View):
                 x.center_y = x.center_y + 0.5
 
 
+        """
+        Move level incrementer to server side, let client display "you win" message based on a parameter from server (all enemies on final level are defeated)
+        """
         if len(self.enemy_list[self.activeLevel]) == 0:
             self.activeLevel += 1
             print('level ', self.activeLevel)
@@ -306,6 +314,12 @@ class TiledWindow(arcade.View):
             self.window.show_view(view)
 
     def on_key_press(self, key: int, modifiers: int):
+        """
+        Modify this: instead of setting change directly, key press should set values in PlayerState which will then transmit to server for the OK)
+        :param key:
+        :param modifiers:
+        :return:
+        """
         if key == arcade.key.UP or key == arcade.key.W:
             self.player.change_y = self.move_speed
         elif key == arcade.key.DOWN or key == arcade.key.S:
@@ -318,6 +332,7 @@ class TiledWindow(arcade.View):
             self.activeLevel += 1
 
     def on_key_release(self, key: int, modifiers: int):
+        """See above comments on change"""
         if self.player.change_y > 0 and (key == arcade.key.UP or key == arcade.key.W):
             self.player.change_y = 0
         elif self.player.change_y < 0 and (key == arcade.key.DOWN or key == arcade.key.S):
@@ -329,6 +344,15 @@ class TiledWindow(arcade.View):
 
     def on_mouse_press(self, x, y, button, modifiers):
         ##Load in a bullet, give it a firing angle, and push it into the list of active player ordnance
+        """
+        This will run on server side when it receives signal from Playerstate that player has clicked the mouse
+        Make sure bullet start point is the player who fired it
+        :param x:
+        :param y:
+        :param button:
+        :param modifiers:
+        :return:
+        """
         bullet_image_file = pathlib.Path.cwd() / 'assets' / 'raw' / 'bullet.png'
         new_bullet = arcade.Sprite(bullet_image_file)
         new_bullet.center_x = self.player.center_x
@@ -345,7 +369,7 @@ class TiledWindow(arcade.View):
         new_bullet.change_y = math.sin(angle) * BULLET_SPEED
 
         self.player_bullet_list.append(new_bullet)
-        # self.bulletCollisionEngine = arcade.PhysicsEngineSimple(self.player_bullet_list[self.mouse], self.wall_list[1])
+
         self.fire = 1  # indicator for sound to play
 
 
@@ -361,13 +385,14 @@ async  def communication_with_server(client: TiledWindow, event_loop):
     while True:
         keystate = json.dumps(client.actions.keys)
         UDPClientSocket.sendto(str.encode(keystate), (client.server_address, Server.SERVER_PORT))
-        data_packet = UDPClientSocket.recvfrom(1024)
+        data_packet = UDPClientSocket.recvfrom(1024) ## Receive a new packet
         data = data_packet[0]  # get the encoded string
-        decoded_data: PlayerState.GameState = PlayerState.GameState.from_json(data)
-        player_dict = decoded_data.player_states
+        decoded_data: PlayerState.GameState = PlayerState.GameState.from_json(data)     # decode the data
+        player_dict = decoded_data.player_states     #update player info
         target: PlayerState.TargetState = decoded_data.target
-        client.target.center_x = target.xLoc
-        client.target.center_y = target.yloc
+        client.player.center_x = target.xLoc    # this is setting our player X/Y
+        client.player.center_y = target.yloc
+        # ADD: client.enemy/ordnance/friendly position data (probably need loops for all this)
         player_info: PlayerState.PlayerState = player_dict[client.ip_addr]
         client.from_server = player_info.points
         client.player.center_x = player_info.x_loc
@@ -379,7 +404,7 @@ def main():
     server_address = input("Enter server IP: ")
     window = arcade.Window(SCREEN_WIDTH, SCREEN_HEIGHT, "Captain Neckbeard: Perkins Cove")
     #Load launch screen:
-    start_view = Instruction.BeginGameView()
+    start_view = BeginGameView()
     window.show_view(start_view)
     #begin:
     arcade.run()
