@@ -6,8 +6,8 @@ import arcade
 import json
 from dataclasses_json import dataclass_json
 
-WINDOW_WIDTH = 1000
-WINDOW_HEIGHT = 1000
+WINDOW_WIDTH = 960
+WINDOW_HEIGHT = 960
 
 
 # a major breakthrough was to find the dataclasses_json package which automatically converted between json and
@@ -29,7 +29,12 @@ class TargetState: #Add enemy state classes here probably
     xLoc: int
     yloc: int
 
-
+@dataclass_json
+@dataclass
+class OrdnanceState: #Data about player ordnance
+    x_loc: int
+    y_loc: int
+    angle: float
 
 @dataclass
 class PlayerMovement:
@@ -42,6 +47,9 @@ class PlayerMovement:
         arcade.key.DOWN: False,
         arcade.key.LEFT: False,
         arcade.key.RIGHT: False}
+    mousePressed = False
+    mouseX: int
+    mouseY: int
     # to string is purely for debugging
     def __str__(self):
         return f"UP: {self.keys[arcade.key.UP]}, Down: {self.keys[arcade.key.DOWN]}, Left: {self.keys[arcade.key.LEFT]}, Right: {self.keys[arcade.key.RIGHT]}, "
@@ -51,4 +59,5 @@ class PlayerMovement:
 @dataclass
 class GameState:
     player_states: Dict[str, PlayerState]
+    ordnance_state: Dict[str, OrdnanceState]
     target: TargetState

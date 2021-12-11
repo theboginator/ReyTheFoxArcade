@@ -345,6 +345,9 @@ class TiledWindow(arcade.View):
         :param modifiers:
         :return:
         """
+        self.actions.mousePressed = True
+        self.actions.mouseX = x
+        self.actions.mouseY = y
         bullet_image_file = pathlib.Path.cwd() / 'assets' / 'raw' / 'bullet.png'
         new_bullet = arcade.Sprite(bullet_image_file)
         new_bullet.center_x = self.player.center_x
@@ -364,6 +367,9 @@ class TiledWindow(arcade.View):
 
         self.fire = 1  # indicator for sound to play
 
+    def on_mouse_release(self, x: float, y: float, button: int,
+                         modifiers: int):
+        self.actions.mousePressed = False
 
 def setup_client_connection(client: TiledWindow):
     client_event_loop = asyncio.new_event_loop()

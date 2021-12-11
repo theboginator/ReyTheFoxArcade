@@ -74,6 +74,9 @@ def process_player_move(player_move: PlayerState.PlayerMovement, client_addr: st
         player_info.y_loc = PlayerState.WINDOW_HEIGHT - 20
     player_info.x_loc += delta_x
     player_info.y_loc += delta_y
+
+    if player_move.mousePressed:
+
     check_if_at_target(player_info, gamestate.target, gamestate)
 
 
