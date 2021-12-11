@@ -22,8 +22,8 @@ BULLET_SPEED = 5
 SCREEN_WIDTH = 960
 SCREEN_HEIGHT = 960
 
-client_address = ""
-server_address = ""
+#client_address = ""
+#server_address = ""
 
 class BeginGameView(arcade.View):
     def __init__(self):
@@ -41,6 +41,8 @@ class BeginGameView(arcade.View):
     def on_mouse_press(self, _x, _y, _button, _modifiers):
         """ If the user presses the mouse button, start the game. """
         print("Game starting")
+        client_address = Server.find_ip_address()
+        server_address = Server.find_ip_address() # for now they'll be the same; change this if we ever want to run multiple clients
         game_view = TiledWindow(server_address, client_address)
         game_view.setup()
         self.window.show_view(game_view)
@@ -71,11 +73,11 @@ class GameOverView(arcade.View):
 
 
 class TiledWindow(arcade.View):
-    def __init__(self, server_add, client_add):
+    def __init__(self, server_address, client_address):
         super().__init__()
         self.actions = None
-        self.ip_addr = client_add
-        self.server_address = server_add
+        self.ip_addr = client_address
+        self.server_address = server_address
         self.window.set_mouse_visible(True)
         self.map_location = pathlib.Path.cwd() / 'Assets' / 'world' / 'mapdata' / 'perkins-cove_L1.json'
         self.map_location2 = pathlib.Path.cwd() / 'Assets' / 'world' / 'mapdata' / 'perkins-cove_L2.json'
@@ -390,8 +392,6 @@ async  def communication_with_server(client: TiledWindow, event_loop):
 
 
 def main():
-    client_address = Server.find_ip_address()
-    server_address = input("Enter server IP: ")
     window = arcade.Window(SCREEN_WIDTH, SCREEN_HEIGHT, "Captain Neckbeard: Perkins Cove")
     #Load launch screen:
     start_view = BeginGameView()

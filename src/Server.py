@@ -18,6 +18,15 @@ import json
 
 SERVER_PORT = 25001
 
+TOTAL_LEVELS = 3
+ENEMIES_PER_LEVEL = 3
+FRAME_HEIGHT = 90
+FRAME_WIDTH = 90
+BULLET_SPEED = 5
+PLAYER_SPEED = 3
+SCREEN_WIDTH = 960
+SCREEN_HEIGHT = 960
+
 all_players:Dict[str, PlayerState.PlayerState] = {}  #key is IP address, value is PlayerState.PlayerState
 
 def find_ip_address():
