@@ -56,13 +56,13 @@ def process_player_move(player_move: PlayerState.PlayerMovement, client_addr: st
     player_info.last_update = now
     delta_x = 0
     delta_y = 0
-    if player_move.keys[str(arcade.key.UP)]:
+    if player_move.keys[str(arcade.key.UP)] or player_move.keys[str(arcade.key.W)]:
         delta_y = 3
-    elif player_move.keys[str(arcade.key.DOWN)]:
+    elif player_move.keys[str(arcade.key.DOWN)] or player_move.keys[str(arcade.key.S)]:
         delta_y = -3
-    if player_move.keys[str(arcade.key.LEFT)]:
+    if player_move.keys[str(arcade.key.LEFT)] or player_move.keys[str(arcade.key.A)]:
         delta_x = -3
-    elif player_move.keys[str(arcade.key.RIGHT)]:
+    elif player_move.keys[str(arcade.key.RIGHT)] or player_move.keys[str(arcade.key.D)]:
         delta_x = 3
     if player_info.x_loc < 0:
         player_info.x_loc = 20

@@ -34,6 +34,10 @@ class TargetState: #Add enemy state classes here probably
 @dataclass
 class PlayerMovement:
     keys = {
+        arcade.key.W: False,
+        arcade.key.A: False,
+        arcade.key.S: False,
+        arcade.key.D: False,
         arcade.key.UP: False,
         arcade.key.DOWN: False,
         arcade.key.LEFT: False,
