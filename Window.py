@@ -253,6 +253,10 @@ class TiledWindow(arcade.View):
             elif x.center_x < self.player.center_x and x.center_y < self.player.center_y:
                 x.center_x = x.center_x + 0.5
                 x.center_y = x.center_y + 0.5
+            elif x.center_x == self.player.center_x and x.center_y < self.player.center_y:
+                x.center_y = x.center_y + 0.5
+            elif x.center_y == self.player.center_y and x.center_y < self.player.center_y:
+                x.center_y = x.center_y + 0.5
 
 
         if len(self.enemy_list[self.activeLevel]) == 0:

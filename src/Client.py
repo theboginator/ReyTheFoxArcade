@@ -41,9 +41,11 @@ class BeginGameView(arcade.View):
     def on_mouse_press(self, _x, _y, _button, _modifiers):
         """ If the user presses the mouse button, start the game. """
         print("Game starting")
-        game_view = TiledWindow()
+        game_view = TiledWindow(server_address, client_address)
         game_view.setup()
         self.window.show_view(game_view)
+        client_thread = threading.Thread(target=setup_client_connection, args=(game_view,), daemon=True)
+        client_thread.start()
 
 class GameOverView(arcade.View):
     """ View to show when game is over """
@@ -67,12 +69,13 @@ class GameOverView(arcade.View):
         game_view.setup()
         self.window.show_view(game_view)
 
+
 class TiledWindow(arcade.View):
-    def __init__(self):
+    def __init__(self, server_add, client_add):
         super().__init__()
         self.actions = None
-        self.ip_addr = client_address
-        self.server_add = server_address
+        self.ip_addr = client_add
+        self.server_address = server_add
         self.window.set_mouse_visible(True)
         self.map_location = pathlib.Path.cwd() / 'Assets' / 'world' / 'mapdata' / 'perkins-cove_L1.json'
         self.map_location2 = pathlib.Path.cwd() / 'Assets' / 'world' / 'mapdata' / 'perkins-cove_L2.json'
@@ -95,6 +98,7 @@ class TiledWindow(arcade.View):
         self.wall_list = []
         self.enemy_list = []
         # self.bullet_enemy_list = []
+        self.actions = PlayerState.PlayerMovement()
 
         """Move the collision engine arrays to server-side; these checks will all be done via server"""
         self.playerCollisionEngineArray = []
@@ -211,7 +215,7 @@ class TiledWindow(arcade.View):
             # self.bulletCollisionEngineArray.append(arcade.PhysicsEngineSimple(self.player_bullet_list, self.wall_list[ctr]))
             ctr += 1
         self.collision_engine = arcade.PhysicsEngineSimple(self.player, self.wall_layer)
-        self.coincollision_engine = arcade.PhysicsEngineSimple(self.coin_sprite, self.wall_layer)
+        #self.coincollision_engine = arcade.PhysicsEngineSimple(self.coin_sprite, self.wall_layer)
 
         lvl = 0
         while lvl < TOTAL_LEVELS:
@@ -229,7 +233,7 @@ class TiledWindow(arcade.View):
         self.map_list[self.activeLevel].draw()
         self.player_list.draw()
         self.player_bullet_list.draw()
-        self.thing_list.draw()
+        #self.thing_list.draw()
         # self.bullet_enemy_list.draw()
         # self.enemy_list.draw()
         self.enemy_list[self.activeLevel].draw()
@@ -249,8 +253,8 @@ class TiledWindow(arcade.View):
         dead_bullets = [impact for impact in self.player_bullet_list
                         if arcade.check_for_collision_with_list(impact, self.enemy_list[self.activeLevel])]
 
-        coin_hits = [impact for impact in self.thing_list
-                     if arcade.check_for_collision_with_list(impact, self.player_bullet_list)]
+        # coin_hits = [impact for impact in self.thing_list
+        #              if arcade.check_for_collision_with_list(impact, self.player_bullet_list)]
 
         #wall_bullets = [impact for impact in self.player_bullet_list
         #if arcade.check_for_collision_with_list(impact, self.wall_list[self.activeLevel])]
@@ -268,11 +272,11 @@ class TiledWindow(arcade.View):
             for bullet in eliminations:
                 self.player_bullet_list.remove(bullet)
 
-        if coin_hits:
-            self.lives += len(coin_hits)
-            eliminations = filter(lambda coin: coin in coin_hits, self.thing_list)
-            for coin in eliminations:
-                self.thing_list.remove(coin)
+        # if coin_hits:
+        #     self.lives += len(coin_hits)
+        #     eliminations = filter(lambda coin: coin in coin_hits, self.thing_list)
+        #     for coin in eliminations:
+        #         self.thing_list.remove(coin)
 
         if len(self.wallCollisions) > 0 or len(self.enemyCollisions) > 0:
             self.lives -= 1
@@ -320,27 +324,13 @@ class TiledWindow(arcade.View):
         :param modifiers:
         :return:
         """
-        if key == arcade.key.UP or key == arcade.key.W:
-            self.player.change_y = self.move_speed
-        elif key == arcade.key.DOWN or key == arcade.key.S:
-            self.player.change_y = -self.move_speed
-        elif key == arcade.key.LEFT or key == arcade.key.A:
-            self.player.change_x = -self.move_speed
-        elif key == arcade.key.RIGHT or key == arcade.key.D:
-            self.player.change_x = self.move_speed
-        elif key == arcade.key.V and self.activeLevel + 1 < TOTAL_LEVELS:
-            self.activeLevel += 1
+        if (key in self.actions.keys):
+            self.actions.keys[key] = True
 
-    def on_key_release(self, key: int, modifiers: int):
+    def on_key_release(self, symbol: int, modifiers: int):
         """See above comments on change"""
-        if self.player.change_y > 0 and (key == arcade.key.UP or key == arcade.key.W):
-            self.player.change_y = 0
-        elif self.player.change_y < 0 and (key == arcade.key.DOWN or key == arcade.key.S):
-            self.player.change_y = 0
-        elif self.player.change_x < 0 and (key == arcade.key.LEFT or key == arcade.key.A):
-            self.player.change_x = 0
-        elif self.player.change_x > 0 and (key == arcade.key.RIGHT or key == arcade.key.D):
-            self.player.change_x = 0
+        if (symbol in self.actions.keys):
+            self.actions.keys[symbol] = False
 
     def on_mouse_press(self, x, y, button, modifiers):
         ##Load in a bullet, give it a firing angle, and push it into the list of active player ordnance
@@ -407,9 +397,8 @@ def main():
     start_view = BeginGameView()
     window.show_view(start_view)
     #begin:
-    arcade.run()
-    client_thread = threading.Thread(target=setup_client_connection, args=(window,), daemon=True)
-    client_thread.start()
+
+
     arcade.run()
 
 if __name__ == '__main__':
