@@ -16,48 +16,52 @@ WINDOW_HEIGHT = 960
 
 @dataclass_json
 @dataclass
-class PlayerState:  #Contains data about the player
+class PlayerState:  # Contains data about a player
     x_loc: int
     y_loc: int
-    #level: int      #Will allow us to tell what level the player is on
+    # level: int      #Will allow us to tell what level the player is on
     points: int
     last_update: datetime.datetime
 
-@dataclass_json
-@dataclass
-class TargetState: #Add enemy state classes here probably
-    xLoc: int
-    yloc: int
 
 @dataclass_json
 @dataclass
-class OrdnanceState: #Data about player ordnance
+class EnemyState:  # Add enemy state classes here probably
+    xLoc: int
+    yloc: int
+
+
+@dataclass_json
+@dataclass
+class OrdnanceState:  # Data about ordnance
     x_loc: int
     y_loc: int
     angle: float
 
+@dataclass_json
 @dataclass
-class PlayerMovement:
+class PlayerInput:
+    keyPressed: dict[arcade.key, bool]
+    mousePressed: bool
+    mouseX: float
+    mouseY: float
+    """
     keys = {
-        arcade.key.W: False,
-        arcade.key.A: False,
-        arcade.key.S: False,
-        arcade.key.D: False,
-        arcade.key.UP: False,
-        arcade.key.DOWN: False,
-        arcade.key.LEFT: False,
-        arcade.key.RIGHT: False}
-    mousePressed = False
-    mouseX: int
-    mouseY: int
-    # to string is purely for debugging
-    def __str__(self):
-        return f"UP: {self.keys[arcade.key.UP]}, Down: {self.keys[arcade.key.DOWN]}, Left: {self.keys[arcade.key.LEFT]}, Right: {self.keys[arcade.key.RIGHT]}, "
+        arcade.key.W: bool,
+        arcade.key.A: bool,
+        arcade.key.S: bool,
+        arcade.key.D: bool,
+        arcade.key.UP: bool,
+        arcade.key.DOWN: bool,
+        arcade.key.LEFT: bool,
+        arcade.key.RIGHT: bool
+    }
+    """
 
 
 @dataclass_json
 @dataclass
 class GameState:
     player_states: Dict[str, PlayerState]
-    ordnance_state: Dict[str, OrdnanceState]
-    target: TargetState
+    #ordnance_state: Dict[str, OrdnanceState]
+    enemy_states: EnemyState
