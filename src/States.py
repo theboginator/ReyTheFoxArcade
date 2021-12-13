@@ -63,5 +63,5 @@ class PlayerInput:
 @dataclass
 class GameState:
     player_states: Dict[str, PlayerState]
-    #ordnance_state: Dict[str, OrdnanceState]
+    ordnance_state: Dict[int, OrdnanceState]
     enemy_states: EnemyState

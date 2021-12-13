@@ -8,6 +8,7 @@ and implements the following additional features:
 
 This modified server application was built by Jacob Bogner and Abe Sabeh
 """
+import math
 import socket
 
 from arcade import key
@@ -35,6 +36,8 @@ S_KEY = '115'
 D_KEY = '100'
 
 all_players: Dict[str, States.PlayerState] = {}  # key is IP address, value is PlayerState.PlayerState
+all_ordnance: Dict[int, States.OrdnanceState] = {}  # key is int serial number
+ordnanceKey = 0
 
 
 def find_ip_address():
@@ -64,7 +67,7 @@ def process_player_move(player_move: States.PlayerInput, client_addr: str, games
     player_info.last_update = now
     delta_x = 0
     delta_y = 0
-    print(player_move.keyPressed)
+    # print(player_move.keyPressed)
     if player_move.keyPressed[W_KEY]:
         delta_y = 3
         print('W')
@@ -87,9 +90,27 @@ def process_player_move(player_move: States.PlayerInput, client_addr: str, games
         player_info.y_loc = States.WINDOW_HEIGHT - 20
     player_info.x_loc += delta_x
     player_info.y_loc += delta_y
-    # if player_move.mousePressed:
-    #   OrdnanceState
     # check_if_at_target(player_info, gamestate.target, gamestate)
+
+
+def process_ordnance_move(player_move: States.PlayerInput, client_addr: str, gameState: States.GameState): #move ordnance
+    player_info = gameState.player_states[client_addr[0]]
+    if player_move.mousePressed:
+        print('New ordnance added')
+        gameState.ordnance_state[ordnanceKey]: States.OrdnanceState
+
+        gameState.ordnance_state[ordnanceKey].x_loc = player_info.x_loc
+        gameState.ordnance_state[ordnanceKey].y_loc = player_info.y_loc
+
+        x_diff = player_move.mouseX - player_info.x_loc
+        y_diff = player_move.mouseY - player_info.y_loc
+
+        angle = math.atan2(y_diff, x_diff)
+        gameState.ordnance_state[ordnanceKey].angle = math.degrees(angle)
+        print(f"Bullet angle: {gameState.ordnance_state[ordnanceKey].angle:.2f}")
+
+        new_bullet.change_x = math.cos(angle) * BULLET_SPEED
+        new_bullet.change_y = math.sin(angle) * BULLET_SPEED
 
 
 def check_if_at_target(player: States.PlayerState, target: States.EnemyState,
@@ -119,7 +140,7 @@ def check_if_at_target(player: States.PlayerState, target: States.EnemyState,
 def main():
     enemy = States.EnemyState(random.randint(36, States.WINDOW_WIDTH - 36),
                               random.randint(36, States.WINDOW_HEIGHT - 36))
-    gameState = States.GameState(all_players, enemy)
+    gameState = States.GameState(all_players, all_ordnance, enemy)
     server_address = find_ip_address()
     print(f" Server Address is: {server_address}, on prt {SERVER_PORT}")
     UDPServerSocket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
@@ -137,8 +158,10 @@ def main():
                                                                 datetime.datetime.now())
             all_players[client_addr[0]] = new_player
         json_data = json.loads(message)
-        player_move: States.PlayerInput = States.PlayerInput(**json_data) #Load player movement from json data received from client
+        player_move: States.PlayerInput = States.PlayerInput(
+            **json_data)  # Load player movement from json data received from client
         process_player_move(player_move, client_addr, gameState)
+        process_ordnance_move(player_move, client_addr, gameState)
         response = gameState.to_json()
         UDPServerSocket.sendto(str.encode(response), client_addr)
 
