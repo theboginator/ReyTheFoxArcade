@@ -149,7 +149,7 @@ def main():
         data_packet = UDPServerSocket.recvfrom(1024)
         message = data_packet[0]  # data is first in tuple
         client_addr = data_packet[1]  # client IP is second
-        if not client_addr[0] in all_players:  # first time this client connected client_addr is (IP_addr, port) we only care about IP per player
+        if not client_addr[0] in all_players:
             print("saw it for the first time")
             offset = len(all_players) + 1
             # create new player with x and y positions, 0 points and a last update of now
@@ -157,7 +157,7 @@ def main():
                                                                 datetime.datetime.now())
             all_players[client_addr[0]] = new_player
         json_data = json.loads(message)
-        player_move: States.PlayerInput = States.PlayerInput(**json_data)  # Load player movement from json data received from client
+        player_move: States.PlayerInput = States.PlayerInput(**json_data)
         process_player_move(player_move, client_addr, gameState)
         #process_ordnance_move(player_move, client_addr, gameState)
         response = gameState.to_json()

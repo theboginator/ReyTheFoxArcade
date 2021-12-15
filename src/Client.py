@@ -1,15 +1,28 @@
+"""
+Rey The Fox Final Project by Jacob Bogner and Abe Sabeh
+
+Some functionalities were implemented using examples provided at api.arcade.academy
+All artwork used in this project is original, (c) 2021, by Jack Brady
+Sound provided by https://www.fesliyanstudios.com/royalty-free-sound-effects-download/gun-shooting-300
+
+This project will appear to have one-sided commits since we did a lot of this via pair-programming on Discord call
+Run server.py then client.py.
+IMPORTANT: TO RUN CLIENT ON A SEPARATE MACHINE, change the variable server_address below to the local IP address
+running the server
+Sadly, this project is not working at the level we were hoping it would. Currently the client displays
+local player movement as well as static sprites for other players connected to the server
+Ordnance is added to the display by the server but remains motionless
+Enemies continue to operate only on the local machine
+"""
 import asyncio
-import json
-import math
 import pathlib
 import random
 import socket
 import threading
-from typing import List, Dict
+from typing import Dict
 
 import arcade
-import Instruction
-import Window
+
 import Server
 from src import States
 
@@ -24,7 +37,7 @@ BUFFERSIZE = 8192
 MAXBULLETS = 5
 
 client_address = ""
-server_address = ""
+server_address = Server.find_ip_address()
 
 start_players: Dict[str, States.PlayerState] = {}  # key is IP address, value is PlayerState.PlayerState
 start_ordnance: list[States.OrdnanceState] = []  # holds all flying projectiles (just bullets rn)
@@ -49,11 +62,13 @@ class BeginGameView(arcade.View):
         """ If the user presses the mouse button, start the game. """
         print("Game starting")
         client_address = Server.find_ip_address()
-        server_address = Server.find_ip_address()  # for now they'll be the same; change this if we ever want to run multiple clients
+        # for now they'll be the same; change this if we ever want to run multiple clients
+        #server_address = Server.find_ip_address()
         game_view = TiledWindow(server_address, client_address)
         game_view.setup()
         self.window.show_view(game_view)
-        client_thread = threading.Thread(target=setup_client_connection, args=(game_view,), daemon=True)
+        client_thread = threading.Thread(target=setup_client_connection,
+                                         args=(game_view,), daemon=True)
         client_thread.start()
 
 
@@ -109,7 +124,8 @@ class TiledWindow(arcade.View):
         # self.bullet_enemy_list = []
         self.actions = States.PlayerInput
         self.gameState = States.GameState(start_players, start_ordnance, start_enemy)
-        self.actions.keyPressed = {arcade.key.W: False, arcade.key.A: False, arcade.key.S: False, arcade.key.D: False}
+        self.actions.keyPressed = {arcade.key.W: False, arcade.key.A: False,
+                                   arcade.key.S: False, arcade.key.D: False}
         self.actions.mousePressed = False
         self.actions.mouseX = 0.0
         self.actions.mouseY = 0.0
@@ -166,7 +182,6 @@ class TiledWindow(arcade.View):
         self.map_list.append(self.mapscene3)
         self.wall_list.append(self.wall_layer3)
 
-
         # Define player, enemy, and ordnance lists:
         self.player_list = arcade.SpriteList()
         self.friendly_list = arcade.SpriteList()  # Holds other connected players
@@ -183,17 +198,6 @@ class TiledWindow(arcade.View):
         self.player.center_y = 500  # also special number/
         self.player_list.append(self.player)
 
-        for server_player in self.gameState.player_states: # Put extra players from server into the player list
-            # Load the player:
-            player_image_file = pathlib.Path.cwd() / 'assets' / 'player' / 'armed_rey.png'
-            self.player = arcade.Sprite(player_image_file)
-            """
-            Player will get a start X and Y from the server
-            """
-            self.player.center_x = 300  # special number
-            self.player.center_y = 500  # also special number/
-            self.player_list.append(self.player)
-
         # set up sound for bullet shot
         shot_sound_path = pathlib.Path.cwd() / 'Assets' / "gunshot.mp3"
         self.shot_sound = arcade.load_sound(shot_sound_path)
@@ -203,7 +207,6 @@ class TiledWindow(arcade.View):
         """
 
         x = 0
-        y = 0
         while x < 6:
             enemy_image_file = pathlib.Path.cwd() / 'assets' / 'enemy' / 'neckbeard.png'
             enemy = arcade.Sprite(enemy_image_file)
@@ -236,10 +239,8 @@ class TiledWindow(arcade.View):
             print('Setup level ', ctr)
             currentWallLayer = self.wall_list[ctr]
             self.playerCollisionEngineArray.append(arcade.PhysicsEngineSimple(self.player, currentWallLayer))
-            # self.bulletCollisionEngineArray.append(arcade.PhysicsEngineSimple(self.player_bullet_list, self.wall_list[ctr]))
             ctr += 1
         self.collision_engine = arcade.PhysicsEngineSimple(self.player, self.wall_layer)
-        # self.coincollision_engine = arcade.PhysicsEngineSimple(self.coin_sprite, self.wall_layer)
 
         lvl = 0
         while lvl < TOTAL_LEVELS:
@@ -257,9 +258,6 @@ class TiledWindow(arcade.View):
         self.map_list[self.activeLevel].draw()
         self.player_list.draw()
         self.player_bullet_list.draw()
-        # self.thing_list.draw()
-        # self.bullet_enemy_list.draw()
-        # self.enemy_list.draw()
         self.enemy_list[self.activeLevel].draw()
 
         arcade.draw_text(f"Score: {self.score}", 10, 920, arcade.color.WHITE, 14)
@@ -270,7 +268,6 @@ class TiledWindow(arcade.View):
         self.wallCollisions = arcade.check_for_collision_with_list(self.player, self.wall_list[self.activeLevel])
         self.enemyCollisions = arcade.check_for_collision_with_list(self.player, self.enemy_list[self.activeLevel])
         self.enemyCollisionEngineArray[self.activeLevel].update()
-
 
         for bullet in self.gameState.ordnance_states:
             bullet_image_file = pathlib.Path.cwd() / 'assets' / 'raw' / 'bullet.png'
@@ -286,15 +283,22 @@ class TiledWindow(arcade.View):
             if len(self.player_bullet_list) > MAXBULLETS:
                 self.player_bullet_list.pop(0)
 
+        for server_player in self.gameState.player_states:  # Put extra players from server into the player list
+            # Load the player:
+            player_image_file = pathlib.Path.cwd() / 'assets' / 'player' / 'armed_rey.png'
+            self.player = arcade.Sprite(player_image_file)
+            """
+            Player will get a start X and Y from the server
+            """
+            self.player.center_x = 300  # special number
+            self.player.center_y = 500  # also special number/
+            self.player_list.append(self.player)
 
-
-        # check if a bullet has collided with an enemy. If it has, increase the player's score and remove the enemy and bullet
         collisions = [impact for impact in self.enemy_list[self.activeLevel]
                       if arcade.check_for_collision_with_list(impact, self.player_bullet_list)]
 
         dead_bullets = [impact for impact in self.player_bullet_list
                         if arcade.check_for_collision_with_list(impact, self.enemy_list[self.activeLevel])]
-
 
         if collisions:
             self.score += len(collisions) * 5
@@ -323,7 +327,8 @@ class TiledWindow(arcade.View):
             self.fire = 0
 
         """
-        Moving enemies will happen on server side; add additional condition to loop: run for each player on the network at each level
+        Moving enemies will happen on server side; add additional condition to loop:
+         run for each player on the network at each level
         """
         self.playerCollisionEngineArray[self.activeLevel].update()
         self.player_bullet_list.update()
@@ -342,7 +347,8 @@ class TiledWindow(arcade.View):
                 x.center_y = x.center_y + 0.5
 
         """
-        Move level incrementer to server side, let client display "you win" message based on a parameter from server (all enemies on final level are defeated)
+        Move level incrementer to server side, let client display "you win" message
+        based on a parameter from server (all enemies on final level are defeated)
         """
         if len(self.enemy_list[self.activeLevel]) == 0:
             self.activeLevel += 1
@@ -354,7 +360,8 @@ class TiledWindow(arcade.View):
 
     def on_key_press(self, key: int, modifiers: int):
         """
-        Modify this: instead of setting change directly, key press should set values in PlayerState which will then transmit to server for the OK)
+        Modify this: instead of setting change directly, key press should set values
+        in PlayerState which will then transmit to server for the OK)
         :param key:
         :param modifiers:
         :return:
@@ -373,9 +380,10 @@ class TiledWindow(arcade.View):
         self.actions.mouseX = x
 
     def on_mouse_press(self, x, y, button, modifiers):
-        ##Load in a bullet, give it a firing angle, and push it into the list of active player ordnance
+        #Load in a bullet, give it a firing angle, and push it into the list of active player ordnance
         """
-        This will run on server side when it receives signal from Playerstate that player has clicked the mouse
+        This will run on server side when it receives signal from Playerstate that
+        player has clicked the mouse
         Make sure bullet start point is the player who fired it
         :param x:
         :param y:
@@ -422,18 +430,18 @@ def setup_client_connection(client: TiledWindow):
 async def communication_with_server(client: TiledWindow, event_loop):
     UDPClientSocket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
     while True:
-        #keystate = json.dumps(client.actions.keys)
-        inputState: States.PlayerInput = States.PlayerInput(client.actions.keyPressed, client.actions.mousePressed, client.actions.mouseX, client.actions.mouseY)
-        print(inputState.mousePressed)
+        # keystate = json.dumps(client.actions.keys)
+        inputState: States.PlayerInput = States.PlayerInput(client.actions.keyPressed,
+                                                            client.actions.mousePressed,
+                                                            client.actions.mouseX, client.actions.mouseY)
         input = inputState.to_json()
 
         UDPClientSocket.sendto(str.encode(input), (client.server_address, Server.SERVER_PORT))
-        data_packet = UDPClientSocket.recvfrom(BUFFERSIZE)  ## Receive a new packet
+        data_packet = UDPClientSocket.recvfrom(BUFFERSIZE)  # Receive a new packet
         data = data_packet[0]  # get the encoded string
         decoded_data: States.GameState = States.GameState.from_json(data)  # decode the data
         player_dict = decoded_data.player_states  # update player info
-        ordnance_list = decoded_data.ordnance_states # get list of bullets
-        enemy_data: list[States.EnemyState] = decoded_data.enemy_states
+        ordnance_list = decoded_data.ordnance_states  # get list of bullets
         # ADD: client.enemy/ordnance/friendly position data (probably need loops for all this)
         player_info: States.PlayerState = player_dict[client.ip_addr]
         client.from_server = player_info.points
