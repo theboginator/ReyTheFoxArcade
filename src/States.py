@@ -8,6 +8,7 @@ from dataclasses_json import dataclass_json
 
 WINDOW_WIDTH = 960
 WINDOW_HEIGHT = 960
+MAX_ORDNANCE = 100
 
 
 # a major breakthrough was to find the dataclasses_json package which automatically converted between json and
@@ -34,6 +35,8 @@ class EnemyState:  # Add enemy state classes here probably
 @dataclass_json
 @dataclass
 class OrdnanceState:  # Data about ordnance
+    change_x: int
+    change_y: int
     x_loc: int
     y_loc: int
     angle: float
@@ -63,5 +66,5 @@ class PlayerInput:
 @dataclass
 class GameState:
     player_states: Dict[str, PlayerState]
-    ordnance_state: Dict[int, OrdnanceState]
-    enemy_states: EnemyState
+    ordnance_states: list[OrdnanceState]
+    enemy_states: list[EnemyState]

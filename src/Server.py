@@ -30,15 +30,16 @@ BULLET_SPEED = 5
 PLAYER_SPEED = 3
 SCREEN_WIDTH = 960
 SCREEN_HEIGHT = 960
+MAXBULLETS = 5
 W_KEY = '119'
 A_KEY = '97'
 S_KEY = '115'
 D_KEY = '100'
 
 all_players: Dict[str, States.PlayerState] = {}  # key is IP address, value is PlayerState.PlayerState
-all_ordnance: Dict[int, States.OrdnanceState] = {}  # key is int serial number
-ordnanceKey = 0
+all_ordnance: list[States.OrdnanceState] = []  # holds all flying projectiles (just bullets rn)
 
+ordnanceCount = 0
 
 def find_ip_address():
     """returns the LAN IP address of the current machine as a string
@@ -61,56 +62,54 @@ def process_player_move(player_move: States.PlayerInput, client_addr: str, games
     # don't process events too fast, only once every 20 miliseconds
     player_info = gamestate.player_states[client_addr[0]]
     now = datetime.datetime.now()
-    if player_info.last_update + datetime.timedelta(milliseconds=20) > now:
-        return
-    # if it has been long enough, process movement
-    player_info.last_update = now
-    delta_x = 0
-    delta_y = 0
-    # print(player_move.keyPressed)
-    if player_move.keyPressed[W_KEY]:
-        delta_y = 3
-        print('W')
-    elif player_move.keyPressed[S_KEY]:
-        delta_y = -3
-        print('S')
-    if player_move.keyPressed[A_KEY]:
-        delta_x = -3
-        print('A')
-    elif player_move.keyPressed[D_KEY]:
-        delta_x = 3
-        print('D')
-    if player_info.x_loc < 0:
-        player_info.x_loc = 20
-    elif player_info.x_loc > States.WINDOW_WIDTH:
-        player_info.x_loc = States.WINDOW_WIDTH - 20
-    if player_info.y_loc < 0:
-        player_info.y_loc = 20
-    elif player_info.y_loc > States.WINDOW_HEIGHT:
-        player_info.y_loc = States.WINDOW_HEIGHT - 20
-    player_info.x_loc += delta_x
-    player_info.y_loc += delta_y
-    # check_if_at_target(player_info, gamestate.target, gamestate)
+    if player_info.last_update + datetime.timedelta(milliseconds=20) <= now:
+        # if it has been long enough, process movement
+        player_info.last_update = now
+        delta_x = 0
+        delta_y = 0
+        # print(player_move.keyPressed)
+        if player_move.keyPressed[W_KEY]:
+            delta_y = 3
+            #print('W')
+        elif player_move.keyPressed[S_KEY]:
+            delta_y = -3
+            #print('S')
+        if player_move.keyPressed[A_KEY]:
+            delta_x = -3
+            #print('A')
+        elif player_move.keyPressed[D_KEY]:
+            delta_x = 3
+            #print('D')
+        player_info.x_loc += delta_x
+        player_info.y_loc += delta_y
+        if player_info.x_loc < 0:
+            player_info.x_loc = 20
+        elif player_info.x_loc > States.WINDOW_WIDTH:
+            player_info.x_loc = States.WINDOW_WIDTH - 20
+        if player_info.y_loc < 0:
+            player_info.y_loc = 20
+        elif player_info.y_loc > States.WINDOW_HEIGHT:
+            player_info.y_loc = States.WINDOW_HEIGHT - 20
+        if player_move.mousePressed:
+            print('New ordnance added')
+            newOrdnance = States.OrdnanceState(0, 0, 0, 0, 0)
+            newOrdnance.x_loc = player_info.x_loc
+            newOrdnance.y_loc = player_info.y_loc
+
+            x_diff = player_move.mouseX - player_info.x_loc
+            y_diff = player_move.mouseY - player_info.y_loc
+
+            angle = math.atan2(y_diff, x_diff)
+            newOrdnance.angle = math.degrees(angle)
+            print(f"Bullet angle: {newOrdnance.angle:.2f}")
+            newOrdnance.change_x = math.cos(newOrdnance.angle) * BULLET_SPEED
+            newOrdnance.change_y = math.sin(newOrdnance.angle) * BULLET_SPEED
+            all_ordnance.append(newOrdnance)
+            if len(all_ordnance) > MAXBULLETS:
+                all_ordnance.pop(0)
+            # check_if_at_target(player_info, gamestate.target, gamestate)
 
 
-def process_ordnance_move(player_move: States.PlayerInput, client_addr: str, gameState: States.GameState): #move ordnance
-    player_info = gameState.player_states[client_addr[0]]
-    if player_move.mousePressed:
-        print('New ordnance added')
-        gameState.ordnance_state[ordnanceKey]: States.OrdnanceState
-
-        gameState.ordnance_state[ordnanceKey].x_loc = player_info.x_loc
-        gameState.ordnance_state[ordnanceKey].y_loc = player_info.y_loc
-
-        x_diff = player_move.mouseX - player_info.x_loc
-        y_diff = player_move.mouseY - player_info.y_loc
-
-        angle = math.atan2(y_diff, x_diff)
-        gameState.ordnance_state[ordnanceKey].angle = math.degrees(angle)
-        print(f"Bullet angle: {gameState.ordnance_state[ordnanceKey].angle:.2f}")
-
-        new_bullet.change_x = math.cos(angle) * BULLET_SPEED
-        new_bullet.change_y = math.sin(angle) * BULLET_SPEED
 
 
 def check_if_at_target(player: States.PlayerState, target: States.EnemyState,
@@ -138,8 +137,9 @@ def check_if_at_target(player: States.PlayerState, target: States.EnemyState,
 
 
 def main():
-    enemy = States.EnemyState(random.randint(36, States.WINDOW_WIDTH - 36),
-                              random.randint(36, States.WINDOW_HEIGHT - 36))
+    enemy: list[States.EnemyState] = []
+    enemy.append(States.EnemyState(random.randint(36, States.WINDOW_WIDTH - 36),
+                              random.randint(36, States.WINDOW_HEIGHT - 36)))
     gameState = States.GameState(all_players, all_ordnance, enemy)
     server_address = find_ip_address()
     print(f" Server Address is: {server_address}, on prt {SERVER_PORT}")
@@ -149,8 +149,7 @@ def main():
         data_packet = UDPServerSocket.recvfrom(1024)
         message = data_packet[0]  # data is first in tuple
         client_addr = data_packet[1]  # client IP is second
-        if not client_addr[
-                   0] in all_players:  # first time this client connected client_addr is (IP_addr, port) we only care about IP per player
+        if not client_addr[0] in all_players:  # first time this client connected client_addr is (IP_addr, port) we only care about IP per player
             print("saw it for the first time")
             offset = len(all_players) + 1
             # create new player with x and y positions, 0 points and a last update of now
@@ -158,10 +157,9 @@ def main():
                                                                 datetime.datetime.now())
             all_players[client_addr[0]] = new_player
         json_data = json.loads(message)
-        player_move: States.PlayerInput = States.PlayerInput(
-            **json_data)  # Load player movement from json data received from client
+        player_move: States.PlayerInput = States.PlayerInput(**json_data)  # Load player movement from json data received from client
         process_player_move(player_move, client_addr, gameState)
-        process_ordnance_move(player_move, client_addr, gameState)
+        #process_ordnance_move(player_move, client_addr, gameState)
         response = gameState.to_json()
         UDPServerSocket.sendto(str.encode(response), client_addr)
 

@@ -5,7 +5,7 @@ import pathlib
 import random
 import socket
 import threading
-from typing import List
+from typing import List, Dict
 
 import arcade
 import Instruction
@@ -20,9 +20,15 @@ FRAME_WIDTH = 90
 BULLET_SPEED = 5
 SCREEN_WIDTH = 960
 SCREEN_HEIGHT = 960
+BUFFERSIZE = 8192
+MAXBULLETS = 5
 
 client_address = ""
 server_address = ""
+
+start_players: Dict[str, States.PlayerState] = {}  # key is IP address, value is PlayerState.PlayerState
+start_ordnance: list[States.OrdnanceState] = []  # holds all flying projectiles (just bullets rn)
+start_enemy: list[States.EnemyState] = []
 
 
 class BeginGameView(arcade.View):
@@ -102,6 +108,7 @@ class TiledWindow(arcade.View):
         self.enemy_list = []
         # self.bullet_enemy_list = []
         self.actions = States.PlayerInput
+        self.gameState = States.GameState(start_players, start_ordnance, start_enemy)
         self.actions.keyPressed = {arcade.key.W: False, arcade.key.A: False, arcade.key.S: False, arcade.key.D: False}
         self.actions.mousePressed = False
         self.actions.mouseX = 0.0
@@ -159,14 +166,6 @@ class TiledWindow(arcade.View):
         self.map_list.append(self.mapscene3)
         self.wall_list.append(self.wall_layer3)
 
-        # Load the player:
-        player_image_file = pathlib.Path.cwd() / 'assets' / 'player' / 'armed_rey.png'
-        self.player = arcade.Sprite(player_image_file)
-        """
-        Player will get a start X and Y from the server
-        """
-        self.player.center_x = 300  # special number
-        self.player.center_y = 500  # also special number/
 
         # Define player, enemy, and ordnance lists:
         self.player_list = arcade.SpriteList()
@@ -175,7 +174,25 @@ class TiledWindow(arcade.View):
         self.player_bullet_list = arcade.SpriteList()
 
         # Put player into player list:
+        player_image_file = pathlib.Path.cwd() / 'assets' / 'player' / 'armed_rey.png'
+        self.player = arcade.Sprite(player_image_file)
+        """
+        Player will get a start X and Y from the server
+        """
+        self.player.center_x = 300  # special number
+        self.player.center_y = 500  # also special number/
         self.player_list.append(self.player)
+
+        for server_player in self.gameState.player_states: # Put extra players from server into the player list
+            # Load the player:
+            player_image_file = pathlib.Path.cwd() / 'assets' / 'player' / 'armed_rey.png'
+            self.player = arcade.Sprite(player_image_file)
+            """
+            Player will get a start X and Y from the server
+            """
+            self.player.center_x = 300  # special number
+            self.player.center_y = 500  # also special number/
+            self.player_list.append(self.player)
 
         # set up sound for bullet shot
         shot_sound_path = pathlib.Path.cwd() / 'Assets' / "gunshot.mp3"
@@ -253,6 +270,24 @@ class TiledWindow(arcade.View):
         self.wallCollisions = arcade.check_for_collision_with_list(self.player, self.wall_list[self.activeLevel])
         self.enemyCollisions = arcade.check_for_collision_with_list(self.player, self.enemy_list[self.activeLevel])
         self.enemyCollisionEngineArray[self.activeLevel].update()
+
+
+        for bullet in self.gameState.ordnance_states:
+            bullet_image_file = pathlib.Path.cwd() / 'assets' / 'raw' / 'bullet.png'
+            new_bullet = arcade.Sprite(bullet_image_file)
+            new_bullet.center_x = bullet.x_loc
+            new_bullet.center_y = bullet.y_loc
+            new_bullet.angle = bullet.angle
+            print(f"Bullet angle: {new_bullet.angle:.2f}")
+
+            new_bullet.change_x = bullet.change_x
+            new_bullet.change_y = bullet.change_y
+            self.player_bullet_list.append(new_bullet)
+            if len(self.player_bullet_list) > MAXBULLETS:
+                self.player_bullet_list.pop(0)
+
+
+
         # check if a bullet has collided with an enemy. If it has, increase the player's score and remove the enemy and bullet
         collisions = [impact for impact in self.enemy_list[self.activeLevel]
                       if arcade.check_for_collision_with_list(impact, self.player_bullet_list)]
@@ -260,11 +295,6 @@ class TiledWindow(arcade.View):
         dead_bullets = [impact for impact in self.player_bullet_list
                         if arcade.check_for_collision_with_list(impact, self.enemy_list[self.activeLevel])]
 
-        # coin_hits = [impact for impact in self.thing_list
-        #              if arcade.check_for_collision_with_list(impact, self.player_bullet_list)]
-
-        # wall_bullets = [impact for impact in self.player_bullet_list
-        # if arcade.check_for_collision_with_list(impact, self.wall_list[self.activeLevel])]
 
         if collisions:
             self.score += len(collisions) * 5
@@ -356,6 +386,7 @@ class TiledWindow(arcade.View):
         self.actions.mousePressed = True
         self.actions.mouseX = x
         self.actions.mouseY = y
+        """
         print(self.actions.mouseY, self.actions.mouseX)
         bullet_image_file = pathlib.Path.cwd() / 'assets' / 'raw' / 'bullet.png'
         new_bullet = arcade.Sprite(bullet_image_file)
@@ -373,7 +404,7 @@ class TiledWindow(arcade.View):
         new_bullet.change_y = math.sin(angle) * BULLET_SPEED
 
         self.player_bullet_list.append(new_bullet)
-
+        """
         self.fire = 1  # indicator for sound to play
 
     def on_mouse_release(self, x: float, y: float, button: int,
@@ -397,16 +428,19 @@ async def communication_with_server(client: TiledWindow, event_loop):
         input = inputState.to_json()
 
         UDPClientSocket.sendto(str.encode(input), (client.server_address, Server.SERVER_PORT))
-        data_packet = UDPClientSocket.recvfrom(1024)  ## Receive a new packet
+        data_packet = UDPClientSocket.recvfrom(BUFFERSIZE)  ## Receive a new packet
         data = data_packet[0]  # get the encoded string
         decoded_data: States.GameState = States.GameState.from_json(data)  # decode the data
         player_dict = decoded_data.player_states  # update player info
-        enemy_data: States.EnemyState = decoded_data.enemy_states
+        ordnance_list = decoded_data.ordnance_states # get list of bullets
+        enemy_data: list[States.EnemyState] = decoded_data.enemy_states
         # ADD: client.enemy/ordnance/friendly position data (probably need loops for all this)
         player_info: States.PlayerState = player_dict[client.ip_addr]
         client.from_server = player_info.points
         client.player.center_x = player_info.x_loc  # this is an update from the server
         client.player.center_y = player_info.y_loc
+        client.incomingBullets = ordnance_list
+        client.gameState = decoded_data
 
 
 def main():
